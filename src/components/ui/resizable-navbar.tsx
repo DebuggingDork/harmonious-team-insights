@@ -84,11 +84,10 @@ export const NavBody = ({ children, className, visible }: NavBodyProps) => {
   return (
     <motion.div
       animate={{
-        backdropFilter: visible ? "blur(20px)" : "blur(0px)",
-        backgroundColor: visible ? "hsl(var(--background) / 0.7)" : "hsl(var(--background) / 0.3)",
+        backdropFilter: visible ? "blur(16px)" : "blur(12px)",
         boxShadow: visible
-          ? "0 8px 32px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.1) inset, 0 1px 0 rgba(255, 255, 255, 0.2) inset"
-          : "0 0 0 1px hsl(var(--border) / 0.3)",
+          ? "0 0 24px rgba(34, 42, 53, 0.06), 0 1px 1px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(34, 42, 53, 0.04), 0 0 4px rgba(34, 42, 53, 0.08), 0 16px 68px rgba(47, 48, 55, 0.05), 0 1px 0 rgba(255, 255, 255, 0.1) inset"
+          : "none",
         width: visible ? "40rem" : "44rem",
         padding: visible ? "8px 16px" : "8px 24px",
       }}
@@ -101,8 +100,8 @@ export const NavBody = ({ children, className, visible }: NavBodyProps) => {
         minWidth: "max-content",
       }}
       className={cn(
-        "relative z-[60] mx-auto hidden w-full max-w-4xl flex-row items-center justify-between rounded-full border border-border/30 px-6 py-2 lg:flex",
-        visible && "border-border/50",
+        "relative z-[60] mx-auto hidden w-full max-w-4xl flex-row items-center justify-between rounded-full bg-background/70 border border-border/50 px-6 py-2 lg:flex",
+        visible && "bg-background/90",
         className
       )}
     >
@@ -151,11 +150,10 @@ export const MobileNav = ({ children, className, visible }: MobileNavProps) => {
   return (
     <motion.div
       animate={{
-        backdropFilter: visible ? "blur(20px)" : "blur(0px)",
-        backgroundColor: visible ? "hsl(var(--background) / 0.7)" : "hsl(var(--background) / 0.3)",
+        backdropFilter: visible ? "blur(16px)" : "blur(12px)",
         boxShadow: visible
-          ? "0 8px 32px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.1) inset, 0 1px 0 rgba(255, 255, 255, 0.2) inset"
-          : "0 0 0 1px hsl(var(--border) / 0.3)",
+          ? "0 0 24px rgba(34, 42, 53, 0.06), 0 1px 1px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(34, 42, 53, 0.04), 0 0 4px rgba(34, 42, 53, 0.08), 0 16px 68px rgba(47, 48, 55, 0.05), 0 1px 0 rgba(255, 255, 255, 0.1) inset"
+          : "none",
         width: visible ? "90%" : "95%",
         paddingRight: visible ? "12px" : "16px",
         paddingLeft: visible ? "12px" : "16px",
@@ -166,8 +164,8 @@ export const MobileNav = ({ children, className, visible }: MobileNavProps) => {
         damping: 50,
       }}
       className={cn(
-        "relative z-50 mx-auto flex w-full max-w-[calc(100vw-2rem)] flex-col items-center justify-between rounded-2xl border border-border/30 px-4 py-3 lg:hidden",
-        visible && "border-border/50",
+        "relative z-50 mx-auto flex w-full max-w-[calc(100vw-2rem)] flex-col items-center justify-between rounded-2xl bg-background/70 border border-border/50 px-4 py-3 lg:hidden",
+        visible && "bg-background/90",
         className
       )}
     >
