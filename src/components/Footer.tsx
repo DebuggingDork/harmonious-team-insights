@@ -8,6 +8,7 @@ import {
   Dribbble,
   Globe 
 } from "lucide-react";
+import TeamTuneLogo from "./TeamTuneLogo";
 import { TextHoverEffect, FooterBackgroundGradient } from "@/components/ui/hover-footer";
 
 const footerLinks = [
@@ -57,10 +58,10 @@ const socialLinks = [
 
 const Footer = () => {
   return (
-    <footer className="relative bg-[#0a0a0a] overflow-hidden pb-0">
+    <footer className="relative bg-[#0a0a0a] overflow-hidden">
       <FooterBackgroundGradient />
       
-      <div className="max-w-7xl mx-auto px-6 pt-16 pb-8 relative z-10">
+      <div className="max-w-7xl mx-auto px-6 py-16 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-8">
           {/* Brand section */}
           <div className="md:col-span-1">
@@ -124,10 +125,10 @@ const Footer = () => {
         </div>
 
         {/* Divider */}
-        <div className="border-t border-[#1f1f1f] mt-12 mb-6" />
+        <div className="border-t border-[#1f1f1f] my-12" />
 
         {/* Footer bottom */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative z-20">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           {/* Social icons */}
           <div className="flex items-center gap-4">
             {socialLinks.map(({ Icon, label, href }) => (
@@ -149,14 +150,17 @@ const Footer = () => {
         </div>
       </div>
 
-      {/* Text hover effect - Large background text anchored to bottom */}
-      <div className="relative h-[180px] md:h-[280px] w-full overflow-hidden">
-        <div className="absolute bottom-0 left-0 right-0 h-[250px] md:h-[350px] flex items-end justify-center">
-          <div className="w-full max-w-[1600px] h-full">
-            <TextHoverEffect text="TEAMTUNE" />
-          </div>
+      {/* Text hover effect - Large background text */}
+      <div className="absolute bottom-0 left-0 right-0 h-[300px] md:h-[400px] flex items-center justify-center pointer-events-none overflow-hidden">
+        <div className="w-full max-w-[1400px] h-full pointer-events-auto">
+          <TextHoverEffect text="TEAMTUNE" />
         </div>
       </div>
+
+      {/* Spacer for the large text */}
+      <div className="h-[150px] md:h-[200px]" />
+
+      <FooterBackgroundGradient />
     </footer>
   );
 };

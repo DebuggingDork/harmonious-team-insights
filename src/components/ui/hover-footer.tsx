@@ -35,17 +35,16 @@ export const TextHoverEffect = ({
       ref={svgRef}
       width="100%"
       height="100%"
-      viewBox="0 0 900 250"
-      preserveAspectRatio="xMidYMax meet"
+      viewBox="0 0 1000 200"
       xmlns="http://www.w3.org/2000/svg"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onMouseMove={(e) => setCursor({ x: e.clientX, y: e.clientY })}
       className={cn("select-none uppercase cursor-pointer", className)}
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 50 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      transition={{ duration: 0.8, ease: "easeOut" }}
+      transition={{ duration: 1, ease: "easeOut" }}
     >
       <defs>
         <linearGradient
@@ -84,26 +83,25 @@ export const TextHoverEffect = ({
       {/* Base outline text - always visible */}
       <motion.text
         x="50%"
-        y="75%"
+        y="50%"
         textAnchor="middle"
         dominantBaseline="middle"
-        strokeWidth="1.5"
-        className="fill-transparent"
+        strokeWidth="1"
+        className="fill-transparent font-bold"
         stroke="#1e3a5f"
         style={{ 
-          fontSize: "180px",
-          fontFamily: "'Inter', sans-serif",
-          fontWeight: 900,
-          letterSpacing: "-0.02em"
+          fontSize: "140px",
+          fontWeight: 800,
+          letterSpacing: "0.05em"
         }}
-        initial={{ strokeDashoffset: 3000, strokeDasharray: 3000 }}
+        initial={{ strokeDashoffset: 2000, strokeDasharray: 2000 }}
         whileInView={{
           strokeDashoffset: 0,
-          strokeDasharray: 3000,
+          strokeDasharray: 2000,
         }}
         viewport={{ once: true }}
         transition={{
-          duration: 2.5,
+          duration: 3,
           ease: "easeInOut",
         }}
       >
@@ -113,18 +111,17 @@ export const TextHoverEffect = ({
       {/* Hover highlight text */}
       <text
         x="50%"
-        y="75%"
+        y="50%"
         textAnchor="middle"
         dominantBaseline="middle"
-        strokeWidth="2"
-        className="fill-transparent"
+        strokeWidth="1.5"
+        className="fill-transparent font-bold"
         stroke="#3ca2fa"
         style={{ 
-          opacity: hovered ? 0.9 : 0,
-          fontSize: "180px",
-          fontFamily: "'Inter', sans-serif",
-          fontWeight: 900,
-          letterSpacing: "-0.02em",
+          opacity: hovered ? 0.8 : 0,
+          fontSize: "140px",
+          fontWeight: 800,
+          letterSpacing: "0.05em",
           transition: "opacity 0.3s ease"
         }}
       >
@@ -134,18 +131,17 @@ export const TextHoverEffect = ({
       {/* Masked reveal text */}
       <text
         x="50%"
-        y="75%"
+        y="50%"
         textAnchor="middle"
         dominantBaseline="middle"
         stroke="url(#textGradient)"
-        strokeWidth="2.5"
+        strokeWidth="2"
         mask="url(#textMask)"
-        className="fill-transparent"
+        className="fill-transparent font-bold"
         style={{ 
-          fontSize: "180px",
-          fontFamily: "'Inter', sans-serif",
-          fontWeight: 900,
-          letterSpacing: "-0.02em"
+          fontSize: "140px",
+          fontWeight: 800,
+          letterSpacing: "0.05em"
         }}
       >
         {text}
