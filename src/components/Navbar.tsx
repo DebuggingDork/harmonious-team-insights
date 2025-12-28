@@ -52,9 +52,11 @@ const Navbar = () => {
               Log in
             </NavbarButton>
           </Link>
-          <NavbarButton variant="primary" href="#">
-            Get Started
-          </NavbarButton>
+          <Link to="/auth/signup">
+            <NavbarButton variant="primary">
+              Get Started
+            </NavbarButton>
+          </Link>
         </motion.div>
       </NavBody>
 
@@ -91,13 +93,14 @@ const Navbar = () => {
                 Log in
               </NavbarButton>
             </Link>
-            <NavbarButton
-              onClick={() => setIsMobileMenuOpen(false)}
-              variant="primary"
-              className="w-full"
-            >
-              Get Started
-            </NavbarButton>
+            <Link to="/auth/signup" onClick={() => setIsMobileMenuOpen(false)} className="w-full">
+              <NavbarButton
+                variant="primary"
+                className="w-full"
+              >
+                Get Started
+              </NavbarButton>
+            </Link>
           </div>
         </MobileNavMenu>
       </MobileNav>

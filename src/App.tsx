@@ -12,6 +12,8 @@ import AdminLogin from "./pages/auth/AdminLogin";
 import ProjectManagerLogin from "./pages/auth/ProjectManagerLogin";
 import TeamLeadLogin from "./pages/auth/TeamLeadLogin";
 import MemberLogin from "./pages/auth/MemberLogin";
+import EmployeeSignUp from "./pages/auth/EmployeeSignUp";
+import PendingApproval from "./pages/auth/PendingApproval";
 
 // Dashboard pages
 import AdminDashboard from "./pages/dashboard/AdminDashboard";
@@ -36,6 +38,8 @@ const App = () => (
           <Route path="/auth/project-manager" element={<ProjectManagerLogin />} />
           <Route path="/auth/team-lead" element={<TeamLeadLogin />} />
           <Route path="/auth/member" element={<MemberLogin />} />
+          <Route path="/auth/signup" element={<EmployeeSignUp />} />
+          <Route path="/auth/pending-approval" element={<PendingApproval />} />
           
           {/* Dashboard routes */}
           <Route path="/dashboard/admin" element={<AdminDashboard />} />
