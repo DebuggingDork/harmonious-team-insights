@@ -38,14 +38,15 @@ const LoginForm = ({ role, roleTitle, roleIcon, dashboardPath }: LoginFormProps)
 
     setIsLoading(true);
 
-    // TODO: Replace with actual authentication when Cloud is enabled
+    // Mock authentication - simulates login and redirects to dashboard
     setTimeout(() => {
       setIsLoading(false);
       toast({
-        title: "Authentication Required",
-        description: "Please enable Lovable Cloud to complete authentication.",
+        title: "Welcome back!",
+        description: `Signed in as ${roleTitle}`,
       });
-    }, 1500);
+      navigate(dashboardPath);
+    }, 1000);
   };
 
   return (
