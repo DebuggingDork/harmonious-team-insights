@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion, useScroll, useMotionValueEvent } from "framer-motion";
+import { Link } from "react-router-dom";
 import {
   Navbar as NavbarWrapper,
   NavBody,
@@ -46,9 +47,11 @@ const Navbar = () => {
           className="flex items-center gap-2"
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
         >
-          <NavbarButton variant="secondary" href="#">
-            Log in
-          </NavbarButton>
+          <Link to="/auth">
+            <NavbarButton variant="secondary">
+              Log in
+            </NavbarButton>
+          </Link>
           <NavbarButton variant="primary" href="#">
             Get Started
           </NavbarButton>
@@ -80,13 +83,14 @@ const Navbar = () => {
             </a>
           ))}
           <div className="flex w-full flex-col gap-3 pt-4 border-t border-border">
-            <NavbarButton
-              onClick={() => setIsMobileMenuOpen(false)}
-              variant="secondary"
-              className="w-full"
-            >
-              Log in
-            </NavbarButton>
+            <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)} className="w-full">
+              <NavbarButton
+                variant="secondary"
+                className="w-full"
+              >
+                Log in
+              </NavbarButton>
+            </Link>
             <NavbarButton
               onClick={() => setIsMobileMenuOpen(false)}
               variant="primary"
