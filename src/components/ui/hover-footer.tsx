@@ -35,42 +35,58 @@ export const TextHoverEffect = ({
       ref={svgRef}
       width="100%"
       height="100%"
-      viewBox="0 0 1000 200"
+      viewBox="0 0 1000 180"
       xmlns="http://www.w3.org/2000/svg"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onMouseMove={(e) => setCursor({ x: e.clientX, y: e.clientY })}
       className={cn("select-none uppercase cursor-pointer", className)}
-      initial={{ opacity: 0, y: 50 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 1, ease: "easeOut" }}
+      initial={{ opacity: 0, scale: 0.95 }}
+      whileInView={{ opacity: 1, scale: 1 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
     >
       <defs>
         <linearGradient
           id="textGradient"
           gradientUnits="userSpaceOnUse"
-          cx="50%"
-          cy="50%"
-          r="25%"
+          x1="0%"
+          y1="0%"
+          x2="100%"
+          y2="0%"
         >
-          {hovered && (
-            <>
-              <stop offset="0%" stopColor="#3ca2fa" />
-              <stop offset="25%" stopColor="#60a5fa" />
-              <stop offset="50%" stopColor="#3ca2fa" />
-              <stop offset="75%" stopColor="#60a5fa" />
-              <stop offset="100%" stopColor="#3ca2fa" />
-            </>
-          )}
+          <stop offset="0%" stopColor="#3ca2fa">
+            <animate
+              attributeName="stop-color"
+              values="#3ca2fa;#60a5fa;#93c5fd;#60a5fa;#3ca2fa"
+              dur="4s"
+              repeatCount="indefinite"
+            />
+          </stop>
+          <stop offset="50%" stopColor="#60a5fa">
+            <animate
+              attributeName="stop-color"
+              values="#60a5fa;#93c5fd;#3ca2fa;#93c5fd;#60a5fa"
+              dur="4s"
+              repeatCount="indefinite"
+            />
+          </stop>
+          <stop offset="100%" stopColor="#93c5fd">
+            <animate
+              attributeName="stop-color"
+              values="#93c5fd;#3ca2fa;#60a5fa;#3ca2fa;#93c5fd"
+              dur="4s"
+              repeatCount="indefinite"
+            />
+          </stop>
         </linearGradient>
 
         <motion.radialGradient
           id="revealMask"
           gradientUnits="userSpaceOnUse"
-          r="30%"
+          r="35%"
           animate={maskPosition}
-          transition={{ duration: duration ?? 0, ease: "easeOut" }}
+          transition={{ duration: duration ?? 0.15, ease: "easeOut" }}
         >
           <stop offset="0%" stopColor="white" />
           <stop offset="100%" stopColor="black" />
@@ -78,21 +94,30 @@ export const TextHoverEffect = ({
         <mask id="textMask">
           <rect x="0" y="0" width="100%" height="100%" fill="url(#revealMask)" />
         </mask>
+        
+        {/* Glow filter */}
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
       </defs>
       
-      {/* Base outline text - always visible */}
+      {/* Base outline text with drawing animation */}
       <motion.text
         x="50%"
         y="50%"
         textAnchor="middle"
         dominantBaseline="middle"
-        strokeWidth="1"
+        strokeWidth="0.8"
         className="fill-transparent font-bold"
         stroke="#1e3a5f"
         style={{ 
-          fontSize: "140px",
+          fontSize: "130px",
           fontWeight: 800,
-          letterSpacing: "0.05em"
+          letterSpacing: "0.02em"
         }}
         initial={{ strokeDashoffset: 2000, strokeDasharray: 2000 }}
         whileInView={{
@@ -101,14 +126,14 @@ export const TextHoverEffect = ({
         }}
         viewport={{ once: true }}
         transition={{
-          duration: 3,
+          duration: 2.5,
           ease: "easeInOut",
         }}
       >
         {text}
       </motion.text>
       
-      {/* Hover highlight text */}
+      {/* Hover highlight text with glow */}
       <text
         x="50%"
         y="50%"
@@ -116,13 +141,14 @@ export const TextHoverEffect = ({
         dominantBaseline="middle"
         strokeWidth="1.5"
         className="fill-transparent font-bold"
-        stroke="#3ca2fa"
+        stroke="url(#textGradient)"
+        filter={hovered ? "url(#glow)" : undefined}
         style={{ 
-          opacity: hovered ? 0.8 : 0,
-          fontSize: "140px",
+          opacity: hovered ? 1 : 0,
+          fontSize: "130px",
           fontWeight: 800,
-          letterSpacing: "0.05em",
-          transition: "opacity 0.3s ease"
+          letterSpacing: "0.02em",
+          transition: "opacity 0.4s ease"
         }}
       >
         {text}
@@ -139,9 +165,9 @@ export const TextHoverEffect = ({
         mask="url(#textMask)"
         className="fill-transparent font-bold"
         style={{ 
-          fontSize: "140px",
+          fontSize: "130px",
           fontWeight: 800,
-          letterSpacing: "0.05em"
+          letterSpacing: "0.02em"
         }}
       >
         {text}

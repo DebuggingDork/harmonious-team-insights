@@ -151,16 +151,11 @@ const Footer = () => {
       </div>
 
       {/* Text hover effect - Large background text */}
-      <div className="absolute bottom-0 left-0 right-0 h-[300px] md:h-[400px] flex items-center justify-center pointer-events-none overflow-hidden">
-        <div className="w-full max-w-[1400px] h-full pointer-events-auto">
+      <div className="relative w-full h-[120px] md:h-[160px] flex items-center justify-center mt-8">
+        <div className="w-full max-w-[1200px] h-full">
           <TextHoverEffect text="TEAMTUNE" />
         </div>
       </div>
-
-      {/* Spacer for the large text */}
-      <div className="h-[150px] md:h-[200px]" />
-
-      <FooterBackgroundGradient />
     </footer>
   );
 };
