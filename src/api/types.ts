@@ -625,6 +625,26 @@ export interface PromoteToAdminResponse {
   message: string;
 }
 
+export interface BlockUserResponse {
+  message: string;
+  user: {
+    id: string;
+    user_code: string;
+    email: string;
+    status: UserStatus;
+  };
+}
+
+export interface UnblockUserResponse {
+  message: string;
+  user: {
+    id: string;
+    user_code: string;
+    email: string;
+    status: UserStatus;
+  };
+}
+
 // Employee Types
 export interface EmployeeProfile {
   id: string;

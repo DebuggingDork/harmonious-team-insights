@@ -39,22 +39,36 @@ const TimelinePage = () => {
   const monthEnd = endOfMonth(currentDate);
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
-  // Group projects by date
+  // Group projects by date with better date handling
   const projectsByDate = useMemo(() => {
     const grouped: Record<string, Project[]> = {};
+    const today = new Date();
     
     projects.forEach((project: Project) => {
-      const startDate = format(new Date(project.start_date), "yyyy-MM-dd");
-      const endDate = format(new Date(project.end_date), "yyyy-MM-dd");
+      const startDate = new Date(project.start_date);
+      const endDate = new Date(project.end_date);
+      
+      // Ensure dates are valid
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        return;
+      }
       
       daysInMonth.forEach((day) => {
         const dayStr = format(day, "yyyy-MM-dd");
-        if (dayStr >= startDate && dayStr <= endDate) {
+        const dayDate = new Date(day);
+        
+        // Check if this day falls within the project timeline
+        if (dayDate >= startDate && dayDate <= endDate) {
           if (!grouped[dayStr]) {
             grouped[dayStr] = [];
           }
           if (!grouped[dayStr].find((p) => p.id === project.id)) {
-            grouped[dayStr].push(project);
+            // Add project status based on current date
+            const projectWithStatus = {
+              ...project,
+              timelineStatus: dayDate < today ? 'past' : dayDate.toDateString() === today.toDateString() ? 'current' : 'future'
+            };
+            grouped[dayStr].push(projectWithStatus);
           }
         }
       });
@@ -63,16 +77,21 @@ const TimelinePage = () => {
     return grouped;
   }, [projects, daysInMonth]);
 
-  // Get upcoming deadlines (next 30 days)
+  // Get upcoming deadlines with better date handling
   const upcomingDeadlines = useMemo(() => {
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time for accurate comparison
     const nextMonth = new Date(today);
     nextMonth.setDate(today.getDate() + 30);
     
     return projects
       .filter((project: Project) => {
         const endDate = new Date(project.end_date);
-        return endDate >= today && endDate <= nextMonth && project.status === "active";
+        // Only include active projects with valid end dates
+        return !isNaN(endDate.getTime()) && 
+               endDate >= today && 
+               endDate <= nextMonth && 
+               project.status === "active";
       })
       .sort((a: Project, b: Project) => 
         new Date(a.end_date).getTime() - new Date(b.end_date).getTime()
@@ -86,7 +105,12 @@ const TimelinePage = () => {
     );
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string, timelineStatus?: string) => {
+    // If project is overdue (past end date and still active), show red
+    if (status === "active" && timelineStatus === "past") {
+      return "bg-red-600";
+    }
+    
     switch (status) {
       case "active":
         return "bg-emerald-500";
@@ -95,7 +119,7 @@ const TimelinePage = () => {
       case "planning":
         return "bg-yellow-500";
       case "on_hold":
-        return "bg-red-500";
+        return "bg-orange-500";
       case "cancelled":
         return "bg-gray-500";
       default:
@@ -223,23 +247,31 @@ const TimelinePage = () => {
                         {format(day, "d")}
                       </div>
                       <div className="space-y-1">
-                        {dayProjects.slice(0, 3).map((project: Project) => (
-                          <div
-                            key={project.id}
-                            onClick={() =>
-                              navigate(
-                                `/dashboard/project-manager/projects/${project.project_code}`
-                              )
-                            }
-                            className={`
-                              text-xs p-1 rounded cursor-pointer hover:opacity-80 transition-opacity
-                              ${getStatusColor(project.status)} text-white truncate
-                            `}
-                            title={project.name}
-                          >
-                            {project.name}
-                          </div>
-                        ))}
+                        {dayProjects.slice(0, 3).map((project: any) => {
+                          const today = new Date();
+                          const endDate = new Date(project.end_date);
+                          const isOverdue = project.status === "active" && endDate < today;
+                          
+                          return (
+                            <div
+                              key={project.id}
+                              onClick={() =>
+                                navigate(
+                                  `/dashboard/project-manager/projects/${project.project_code}`
+                                )
+                              }
+                              className={`
+                                text-xs p-1 rounded cursor-pointer hover:opacity-80 transition-opacity
+                                ${getStatusColor(project.status, project.timelineStatus)} text-white truncate
+                                ${isOverdue ? "animate-pulse" : ""}
+                              `}
+                              title={`${project.name}${isOverdue ? " (OVERDUE)" : ""}`}
+                            >
+                              {project.name}
+                              {isOverdue && " ⚠️"}
+                            </div>
+                          );
+                        })}
                         {dayProjects.length > 3 && (
                           <div className="text-xs text-muted-foreground">
                             +{dayProjects.length - 3} more
@@ -272,6 +304,10 @@ const TimelinePage = () => {
                     .map((project: Project) => {
                       const startDate = new Date(project.start_date);
                       const endDate = new Date(project.end_date);
+                      const today = new Date();
+                      const hasStarted = startDate <= today;
+                      const isOverdue = project.status === "active" && endDate < today;
+                      
                       const duration =
                         Math.ceil(
                           (endDate.getTime() - startDate.getTime()) /
@@ -283,7 +319,9 @@ const TimelinePage = () => {
                           key={project.id}
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
-                          className="flex items-center gap-4 p-4 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+                          className={`flex items-center gap-4 p-4 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer ${
+                            isOverdue ? "border-red-500 bg-red-50 dark:bg-red-950/20" : ""
+                          }`}
                           onClick={() =>
                             navigate(
                               `/dashboard/project-manager/projects/${project.project_code}`
@@ -293,9 +331,14 @@ const TimelinePage = () => {
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
                               <FolderKanban className="h-4 w-4 text-primary" />
-                              <h3 className="font-medium">{project.name}</h3>
+                              <h3 className="font-medium">
+                                {project.name}
+                                {isOverdue && <span className="text-red-500 ml-2">⚠️ OVERDUE</span>}
+                                {!hasStarted && <span className="text-blue-500 ml-2">📅 Not Started</span>}
+                              </h3>
                               <Badge
                                 variant={
+                                  isOverdue ? "destructive" :
                                   project.status === "active"
                                     ? "default"
                                     : project.status === "completed"
@@ -316,6 +359,14 @@ const TimelinePage = () => {
                               <span>End: {format(endDate, "MMM d, yyyy")}</span>
                               <span>•</span>
                               <span>{duration} days</span>
+                              {isOverdue && (
+                                <>
+                                  <span>•</span>
+                                  <span className="text-red-500 font-medium">
+                                    {Math.ceil((today.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24))} days overdue
+                                  </span>
+                                </>
+                              )}
                             </div>
                           </div>
                           <ArrowRight className="h-4 w-4 text-muted-foreground" />

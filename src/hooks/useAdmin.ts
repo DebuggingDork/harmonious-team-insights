@@ -95,6 +95,36 @@ export const usePromoteToAdmin = () => {
 };
 
 /**
+ * Block user mutation
+ */
+export const useBlockUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => adminService.blockUser(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.users.all });
+    },
+    onError: handleError,
+  });
+};
+
+/**
+ * Unblock user mutation
+ */
+export const useUnblockUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => adminService.unblockUser(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.users.all });
+    },
+    onError: handleError,
+  });
+};
+
+/**
  * Get plugins
  */
 export const usePlugins = () => {

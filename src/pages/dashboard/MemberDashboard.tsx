@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { 
   User, 
   TrendingUp,
@@ -26,6 +26,8 @@ import { AreaChart, Area, XAxis, YAxis, BarChart, Bar } from "recharts";
 import { useAuth } from "@/hooks/useAuth";
 import { useMyProfile, useMyPerformance, useMyObservations, useMyGitActivity, useMyMetrics } from "@/hooks/useEmployee";
 import { format } from "date-fns";
+import MyProgress from "@/components/employee/MyProgress";
+import MyFeedback from "@/components/employee/MyFeedback";
 
 // Helper function to calculate date ranges
 const getDateRanges = () => {
@@ -49,6 +51,7 @@ const chartConfig = {
 
 const MemberDashboard = () => {
   const { user, logout } = useAuth();
+  const [activeTab, setActiveTab] = useState("overview");
   const dateRanges = useMemo(() => getDateRanges(), []);
 
   // Get profile data
@@ -183,15 +186,36 @@ const MemberDashboard = () => {
         
         <nav className="mt-8 flex-1">
           <div className="space-y-1">
-            <button className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground bg-accent rounded-lg w-full text-left">
+            <button 
+              onClick={() => setActiveTab("overview")}
+              className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors ${
+                activeTab === "overview" 
+                  ? "font-medium text-foreground bg-accent" 
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+              }`}
+            >
               <User className="h-4 w-4" />
               My Overview
             </button>
-            <button className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors w-full text-left">
+            <button 
+              onClick={() => setActiveTab("progress")}
+              className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors ${
+                activeTab === "progress" 
+                  ? "font-medium text-foreground bg-accent" 
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+              }`}
+            >
               <TrendingUp className="h-4 w-4" />
               My Progress
             </button>
-            <button className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors w-full text-left">
+            <button 
+              onClick={() => setActiveTab("feedback")}
+              className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors ${
+                activeTab === "feedback" 
+                  ? "font-medium text-foreground bg-accent" 
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+              }`}
+            >
               <MessageSquare className="h-4 w-4" />
               Feedback
             </button>
@@ -249,15 +273,16 @@ const MemberDashboard = () => {
 
         {/* Dashboard Content */}
         <div className="p-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <h1 className="text-2xl font-bold text-foreground mb-2">
-              Welcome, {personalData?.name?.split(' ')[0] || user?.full_name?.split(' ')[0] || "Member"}!
-            </h1>
-            <p className="text-muted-foreground mb-8">Your personal workspace and progress overview.</p>
+          {activeTab === "overview" && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <h1 className="text-2xl font-bold text-foreground mb-2">
+                Welcome, {personalData?.name?.split(' ')[0] || user?.full_name?.split(' ')[0] || "Member"}!
+              </h1>
+              <p className="text-muted-foreground mb-8">Your personal workspace and progress overview.</p>
 
             {/* Personal Overview */}
             <Card className="mb-6">
@@ -486,7 +511,11 @@ const MemberDashboard = () => {
                 </div>
               </CardContent>
             </Card>
-          </motion.div>
+            </motion.div>
+          )}
+
+          {activeTab === "progress" && <MyProgress />}
+          {activeTab === "feedback" && <MyFeedback />}
         </div>
       </main>
     </div>

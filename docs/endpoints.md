@@ -663,9 +663,50 @@ Single Delete Response:
 Bulk Delete Response:
 {  "message": "Bulk delete completed: 2 deleted, 1 failed",  "deleted": ["PROJ00000001", "PROJ00000002"],  "failed": [    {      "project_code": "PROJ00000003",      "error": "You do not have access to this project"    }  ],  "total_requested": 3,  "total_deleted": 2,  "total_failed": 1}
 All endpoints are protected by authentication and require the project_manager role. The implementation is ready to use.
+
+### 27. Delete Project (Single)
+**DELETE** `https://upea.onrender.com/api/project-manager/projects/:code`
+
+**Response:**
+```json
+{
+  "message": "Project deleted successfully",
+  "project_code": "PROJ00000001"
+}
+```
+
 ---
 
-### 27. Get Team Performance (PM)
+### 28. Delete Projects (Bulk)
+**DELETE** `https://upea.onrender.com/api/project-manager/projects/bulk`
+
+**Request Body:**
+```json
+{
+  "project_codes": ["PROJ00000001", "PROJ00000002", "PROJ00000003"]
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Bulk delete completed: 2 deleted, 1 failed",
+  "deleted": ["PROJ00000001", "PROJ00000002"],
+  "failed": [
+    {
+      "project_code": "PROJ00000003",
+      "error": "You do not have access to this project"
+    }
+  ],
+  "total_requested": 3,
+  "total_deleted": 2,
+  "total_failed": 1
+}
+```
+
+---
+
+### 29. Get Team Performance (PM)
 **GET** `https://upea.onrender.com/api/project-manager/projects/:projectCode/teams/:teamCode/performance?period_start=2024-01-01&period_end=2024-01-31`
 
 **Response:**
@@ -729,7 +770,7 @@ All endpoints are protected by authentication and require the project_manager ro
 
 ---
 
-### 28. Get Project Health Metrics
+### 30. Get Project Health Metrics
 **GET** `https://upea.onrender.com/api/project-manager/projects/:projectCode/health`
 
 **Response:**
@@ -1502,7 +1543,10 @@ All endpoints are protected by authentication and require the project_manager ro
 ---
 
 ### 56. Get Observations by Member
-**GET** `https://upea.onrender.com/api/team-lead/teams/:teamCode/members/:userCode/observations?page=1&limit=10`
+**GET** `https://upea.onrender.com/api
+
+
+/teams/:teamCode/members/:userCode/observations?page=1&limit=10`
 
 **Response:**
 ```json
@@ -1794,15 +1838,431 @@ All endpoints are protected by authentication and require the project_manager ro
 
 ---
 
+---
+
+## Missing Endpoints (Need Implementation)
+
+### Admin Endpoints
+
+### 67. Block User
+**POST** `https://upea.onrender.com/api/admin/users/:id/block`
+
+**Headers:** `Authorization: Bearer <admin_token>`
+
+**Request Body:**
+```json
+{
+  "reason": "Violation of company policy"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "User blocked successfully",
+  "user": {
+    "id": "uuid",
+    "user_code": "USER00000001",
+    "status": "blocked",
+    "blocked_at": "2025-01-15T10:00:00.000Z",
+    "blocked_reason": "Violation of company policy"
+  }
+}
+```
+
+---
+
+### 68. Unblock User
+**POST** `https://upea.onrender.com/api/admin/users/:id/unblock`
+
+**Headers:** `Authorization: Bearer <admin_token>`
+
+**Request Body:**
+```json
+{
+  "reason": "Issue resolved"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "User unblocked successfully",
+  "user": {
+    "id": "uuid",
+    "user_code": "USER00000001",
+    "status": "active",
+    "unblocked_at": "2025-01-15T10:00:00.000Z",
+    "unblock_reason": "Issue resolved"
+  }
+}
+```
+
+---
+
+### Notification Endpoints
+
+### 69. Get Notifications
+**GET** `https://upea.onrender.com/api/notifications?page=1&limit=20&unread_only=true`
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Query Parameters:**
+- `page`: number (default: 1)
+- `limit`: number (default: 20, max: 100)
+- `unread_only`: boolean (default: false)
+
+**Response:**
+```json
+{
+  "notifications": [
+    {
+      "id": "uuid",
+      "title": "New task assigned",
+      "message": "You have been assigned a new task: Implement login page",
+      "type": "task_assignment",
+      "read": false,
+      "created_at": "2025-01-15T10:00:00.000Z",
+      "data": {
+        "task_id": "uuid",
+        "task_code": "TASK00000001"
+      }
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 15,
+    "total_pages": 1,
+    "unread_count": 5
+  }
+}
+```
+
+---
+
+### 70. Mark Notification as Read
+**PUT** `https://upea.onrender.com/api/notifications/:id/read`
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Response:**
+```json
+{
+  "message": "Notification marked as read",
+  "notification": {
+    "id": "uuid",
+    "read": true,
+    "read_at": "2025-01-15T10:00:00.000Z"
+  }
+}
+```
+
+---
+
+### 71. Mark All Notifications as Read
+**PUT** `https://upea.onrender.com/api/notifications/read-all`
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Response:**
+```json
+{
+  "message": "All notifications marked as read",
+  "updated_count": 5
+}
+```
+
+---
+
+### Search Endpoints
+
+### 72. Global Search
+**GET** `https://upea.onrender.com/api/search?q=query&type=all&limit=10`
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Query Parameters:**
+- `q`: string (search query)
+- `type`: `all` | `users` | `projects` | `tasks` | `teams`
+- `limit`: number (default: 10, max: 50)
+
+**Response:**
+```json
+{
+  "results": {
+    "users": [
+      {
+        "id": "uuid",
+        "user_code": "USER00000001",
+        "full_name": "John Doe",
+        "email": "john@company.com",
+        "type": "user"
+      }
+    ],
+    "projects": [
+      {
+        "id": "uuid",
+        "project_code": "PROJ00000001",
+        "name": "Website Redesign",
+        "description": "Complete redesign",
+        "type": "project"
+      }
+    ],
+    "tasks": [
+      {
+        "id": "uuid",
+        "task_code": "TASK00000001",
+        "title": "Implement login page",
+        "description": "Create login UI",
+        "type": "task"
+      }
+    ],
+    "teams": [
+      {
+        "id": "uuid",
+        "team_code": "TEAM00000001",
+        "name": "Frontend Team",
+        "project_name": "Website Redesign",
+        "type": "team"
+      }
+    ]
+  },
+  "total_results": 25,
+  "query": "login"
+}
+```
+
+---
+
+### Timeline/Deadline Endpoints
+
+### 73. Get Upcoming Deadlines
+**GET** `https://upea.onrender.com/api/deadlines/upcoming?days=7&user_id=uuid`
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Query Parameters:**
+- `days`: number (default: 7, look ahead days)
+- `user_id`: string (optional, filter by user)
+
+**Response:**
+```json
+{
+  "deadlines": [
+    {
+      "id": "uuid",
+      "type": "task",
+      "title": "Implement login page",
+      "code": "TASK00000001",
+      "due_date": "2025-01-20T00:00:00.000Z",
+      "days_remaining": 3,
+      "priority": "high",
+      "assigned_to": {
+        "user_id": "uuid",
+        "user_name": "John Doe"
+      },
+      "project": {
+        "project_id": "uuid",
+        "project_name": "Website Redesign"
+      }
+    }
+  ],
+  "summary": {
+    "total_deadlines": 5,
+    "overdue": 1,
+    "due_today": 2,
+    "due_this_week": 2
+  }
+}
+```
+
+---
+
+### 74. Get Project Timeline
+**GET** `https://upea.onrender.com/api/projects/:code/timeline?start_date=2025-01-01&end_date=2025-12-31`
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Query Parameters:**
+- `start_date`: ISO date string
+- `end_date`: ISO date string
+
+**Response:**
+```json
+{
+  "project": {
+    "project_id": "uuid",
+    "project_code": "PROJ00000001",
+    "project_name": "Website Redesign"
+  },
+  "timeline": {
+    "milestones": [
+      {
+        "id": "uuid",
+        "title": "Design Phase Complete",
+        "date": "2025-02-15T00:00:00.000Z",
+        "status": "completed",
+        "description": "All UI/UX designs approved"
+      }
+    ],
+    "tasks": [
+      {
+        "id": "uuid",
+        "task_code": "TASK00000001",
+        "title": "Implement login page",
+        "start_date": "2025-01-15T00:00:00.000Z",
+        "due_date": "2025-01-20T00:00:00.000Z",
+        "status": "in_progress",
+        "assigned_to": "John Doe"
+      }
+    ],
+    "events": [
+      {
+        "id": "uuid",
+        "title": "Sprint Planning",
+        "date": "2025-01-22T09:00:00.000Z",
+        "type": "meeting",
+        "attendees": ["John Doe", "Jane Smith"]
+      }
+    ]
+  }
+}
+```
+
+---
+
+### Google Calendar Integration
+
+### 75. Connect Google Calendar
+**POST** `https://upea.onrender.com/api/integrations/google-calendar/connect`
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Response:**
+```json
+{
+  "auth_url": "https://accounts.google.com/oauth2/auth?..."
+}
+```
+
+---
+
+### 76. Google Calendar OAuth Callback
+**GET** `https://upea.onrender.com/api/integrations/google-calendar/callback?code=...&state=...`
+
+**Response:** Redirects to success page or returns:
+```json
+{
+  "message": "Google Calendar connected successfully",
+  "calendar_email": "user@gmail.com"
+}
+```
+
+---
+
+### 77. Sync Calendar Events
+**POST** `https://upea.onrender.com/api/integrations/google-calendar/sync`
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Request Body:**
+```json
+{
+  "sync_tasks": true,
+  "sync_deadlines": true,
+  "calendar_id": "primary"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Calendar sync completed",
+  "synced_events": 15,
+  "created_events": 5,
+  "updated_events": 10
+}
+```
+
+---
+
+### 78. Get Calendar Events
+**GET** `https://upea.onrender.com/api/integrations/google-calendar/events?start_date=2025-01-01&end_date=2025-01-31`
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Query Parameters:**
+- `start_date`: ISO date string
+- `end_date`: ISO date string
+
+**Response:**
+```json
+{
+  "events": [
+    {
+      "id": "google_event_id",
+      "title": "Sprint Planning",
+      "start_time": "2025-01-22T09:00:00.000Z",
+      "end_time": "2025-01-22T10:00:00.000Z",
+      "description": "Weekly sprint planning meeting",
+      "attendees": ["user@company.com"],
+      "source": "google_calendar"
+    }
+  ],
+  "total_events": 10
+}
+```
+
+---
+
+### Enhanced Project Manager Endpoints
+
+### 79. Update Project Status
+**PUT** `https://upea.onrender.com/api/project-manager/projects/:code/status`
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Request Body:**
+```json
+{
+  "status": "active",
+  "reason": "All requirements finalized"
+}
+```
+
+**Response:**
+```json
+{
+  "id": "uuid",
+  "project_code": "PROJ00000001",
+  "name": "Website Redesign",
+  "status": "active",
+  "previous_status": "planning",
+  "status_changed_at": "2025-01-15T10:00:00.000Z",
+  "status_change_reason": "All requirements finalized",
+  "updated_at": "2025-01-15T10:00:00.000Z"
+}
+```
+
+---
+
 ## Summary
 
-Total implemented endpoints: 66
+### Total Endpoints
+- **Implemented**: 66 endpoints
+- **Missing**: 13 endpoints
+- **Total Required**: 79 endpoints
 
-- Authentication: 4 endpoints
-- Admin: 9 endpoints
-- Project Manager: 15 endpoints
-- Employee: 19 endpoints
-- Team Lead: 18 endpoints
-- GitHub OAuth: 1 endpoint
+### Missing Endpoints by Category
+- **Admin**: 2 endpoints (block/unblock user)
+- **Notifications**: 3 endpoints
+- **Search**: 1 endpoint
+- **Timeline/Deadlines**: 2 endpoints
+- **Google Calendar**: 4 endpoints
+- **Enhanced PM**: 1 endpoint
 
-All endpoints are implemented and ready for frontend integration.
+### Implementation Priority
+1. **Critical**: Block/unblock user, project status update
+2. **High**: Notifications system, search functionality
+3. **Medium**: Timeline/deadlines, Google Calendar integration

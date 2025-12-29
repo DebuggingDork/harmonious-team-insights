@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { useState } from "react";
 import { 
   Shield, 
   Users, 
@@ -20,12 +21,16 @@ import {
   Building2,
   UserCog,
   Layers,
-  Loader2
+  Loader2,
+  Sun,
+  Moon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TeamTuneLogo from "@/components/TeamTuneLogo";
 import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "@/contexts/ThemeContext";
 import { usePendingUsers, useAllUsers, useApproveUser, useRejectUser } from "@/hooks/useAdmin";
 import { format } from "date-fns";
 import {
@@ -39,13 +44,21 @@ import {
   AreaChart,
   Area,
 } from "recharts";
+import AdminUsers from "@/components/admin/AdminUsers";
+import AdminRoles from "@/components/admin/AdminRoles";
+import AdminDepartments from "@/components/admin/AdminDepartments";
+import AdminSettings from "@/components/admin/AdminSettings";
+import NotificationPanel from "@/components/admin/NotificationPanel";
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const { data: pendingUsers = [], isLoading: isLoadingPending } = usePendingUsers();
   const { data: allUsers = [], isLoading: isLoadingAll } = useAllUsers();
   const approveUserMutation = useApproveUser();
   const rejectUserMutation = useRejectUser();
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -106,23 +119,58 @@ const AdminDashboard = () => {
         
         <nav className="mt-8 flex-1">
           <div className="space-y-1">
-            <button className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground bg-accent rounded-lg w-full text-left">
+            <button 
+              onClick={() => setActiveTab("dashboard")}
+              className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg w-full text-left transition-colors ${
+                activeTab === "dashboard" 
+                  ? "text-foreground bg-accent" 
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+              }`}
+            >
               <BarChart3 className="h-4 w-4" />
               Dashboard
             </button>
-            <button className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors w-full text-left">
+            <button 
+              onClick={() => setActiveTab("users")}
+              className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors ${
+                activeTab === "users" 
+                  ? "font-medium text-foreground bg-accent" 
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+              }`}
+            >
               <Users className="h-4 w-4" />
               Users
             </button>
-            <button className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors w-full text-left">
+            <button 
+              onClick={() => setActiveTab("roles")}
+              className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors ${
+                activeTab === "roles" 
+                  ? "font-medium text-foreground bg-accent" 
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+              }`}
+            >
               <UserCog className="h-4 w-4" />
               Roles
             </button>
-            <button className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors w-full text-left">
+            <button 
+              onClick={() => setActiveTab("departments")}
+              className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors ${
+                activeTab === "departments" 
+                  ? "font-medium text-foreground bg-accent" 
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+              }`}
+            >
               <Building2 className="h-4 w-4" />
               Departments
             </button>
-            <button className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors w-full text-left">
+            <button 
+              onClick={() => setActiveTab("settings")}
+              className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors ${
+                activeTab === "settings" 
+                  ? "font-medium text-foreground bg-accent" 
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+              }`}
+            >
               <Settings className="h-4 w-4" />
               Settings
             </button>
@@ -160,7 +208,25 @@ const AdminDashboard = () => {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <button className="relative p-2 text-muted-foreground hover:text-foreground transition-colors">
+              {/* Theme Toggle */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleTheme}
+                className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {theme === 'dark' ? (
+                  <Sun className="h-5 w-5" />
+                ) : (
+                  <Moon className="h-5 w-5" />
+                )}
+              </Button>
+
+              {/* Notifications */}
+              <button 
+                onClick={() => setIsNotificationPanelOpen(true)}
+                className="relative p-2 text-muted-foreground hover:text-foreground transition-colors"
+              >
                 <Bell className="h-5 w-5" />
                 <span className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full" />
               </button>
@@ -179,212 +245,255 @@ const AdminDashboard = () => {
 
         {/* Dashboard Content */}
         <div className="p-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <h1 className="text-2xl font-bold text-foreground mb-2">System Overview</h1>
-            <p className="text-muted-foreground mb-8">Monitor and manage your organization's health and access.</p>
-
-            {/* System Overview Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-              {[
-                { label: "Total Users", value: totalUsers.toString(), icon: Users, color: "bg-primary/10 text-primary", isLoading: isLoadingAll },
-                { label: "Pending", value: pendingCount.toString(), icon: Clock, color: "bg-warning/10 text-warning", isLoading: isLoadingPending },
-                { label: "Active", value: activeUsers.toString(), icon: UserCheck, color: "bg-emerald-500/10 text-emerald-500", isLoading: isLoadingAll },
-                { label: "Blocked", value: blockedUsers.toString(), icon: UserX, color: "bg-destructive/10 text-destructive", isLoading: isLoadingAll },
-              ].map((stat, index) => (
-                <motion.div
-                  key={stat.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="bg-card border border-border rounded-xl p-6"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm text-muted-foreground">{stat.label}</p>
-                    <div className={`p-2 rounded-lg ${stat.color}`}>
-                      {stat.isLoading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <stat.icon className="h-4 w-4" />
-                      )}
-                    </div>
-                  </div>
-                  <p className="text-2xl font-bold text-foreground">
-                    {stat.isLoading ? "..." : stat.value}
-                  </p>
-                </motion.div>
-              ))}
-            </div>
-
-            {/* Role Distribution */}
+          {activeTab === "dashboard" && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="bg-card border border-border rounded-xl p-6 mb-8"
+              transition={{ duration: 0.5 }}
             >
-              <h2 className="text-lg font-semibold text-foreground mb-4">Role Distribution</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <h1 className="text-2xl font-bold text-foreground mb-2">System Overview</h1>
+              <p className="text-muted-foreground mb-8">Monitor and manage your organization's health and access.</p>
+
+              {/* System Overview Stats */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 {[
-                  { role: "Admins", count: roleDistribution.admin, icon: Shield },
-                  { role: "Project Managers", count: roleDistribution.project_manager, icon: FolderKanban },
-                  { role: "Team Leads", count: roleDistribution.team_lead, icon: UsersRound },
-                  { role: "Members", count: roleDistribution.employee, icon: Users },
-                ].map((item) => (
-                  <div key={item.role} className="flex items-center gap-3 p-4 bg-accent/50 rounded-lg">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                      <item.icon className="h-4 w-4 text-primary" />
+                  { label: "Total Users", value: totalUsers.toString(), icon: Users, color: "bg-primary/10 text-primary", isLoading: isLoadingAll },
+                  { label: "Pending", value: pendingCount.toString(), icon: Clock, color: "bg-warning/10 text-warning", isLoading: isLoadingPending },
+                  { label: "Active", value: activeUsers.toString(), icon: UserCheck, color: "bg-emerald-500/10 text-emerald-500", isLoading: isLoadingAll },
+                  { label: "Blocked", value: blockedUsers.toString(), icon: UserX, color: "bg-destructive/10 text-destructive", isLoading: isLoadingAll },
+                ].map((stat, index) => (
+                  <motion.div
+                    key={stat.label}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                    className="bg-card border border-border rounded-xl p-6"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-sm text-muted-foreground">{stat.label}</p>
+                      <div className={`p-2 rounded-lg ${stat.color}`}>
+                        {stat.isLoading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <stat.icon className="h-4 w-4" />
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xl font-bold text-foreground">{item.count}</p>
-                      <p className="text-xs text-muted-foreground">{item.role}</p>
-                    </div>
-                  </div>
+                    <p className="text-2xl font-bold text-foreground">
+                      {stat.isLoading ? "..." : stat.value}
+                    </p>
+                  </motion.div>
                 ))}
               </div>
-            </motion.div>
 
-            {/* Pending Approvals - High Priority */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="bg-card border-2 border-warning/50 rounded-xl p-6 mb-8"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-warning/10 rounded-lg">
-                    <Clock className="h-5 w-5 text-warning" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-foreground">Pending Approvals</h2>
-                    <p className="text-sm text-muted-foreground">Users awaiting your approval</p>
-                  </div>
-                </div>
-                <Badge variant="secondary" className="bg-warning/10 text-warning border-warning/20">
-                  {pendingUsers.length} pending
-                </Badge>
-              </div>
-              
-              <div className="space-y-3">
-                {isLoadingPending ? (
-                  <div className="flex items-center justify-center p-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                  </div>
-                ) : pendingUsers.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-4">No pending approvals</p>
-                ) : (
-                  pendingUsers.map((pendingUser) => (
-                    <div
-                      key={pendingUser.id}
-                      className="flex items-center justify-between p-4 bg-accent/50 rounded-lg"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
-                          <span className="text-sm font-medium text-primary">
-                            {pendingUser.full_name.split(' ').map(n => n[0]).join('')}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{pendingUser.full_name}</p>
-                          <p className="text-xs text-muted-foreground">{pendingUser.email}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs text-muted-foreground hidden sm:block">
-                          Requested {pendingUser.created_at ? format(new Date(pendingUser.created_at), "MMM d, yyyy") : "N/A"}
-                        </span>
-                        <div className="flex gap-2">
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => handleReject(pendingUser.id)}
-                            disabled={rejectUserMutation.isPending}
-                          >
-                            <XCircle className="h-4 w-4 mr-1" />
-                            Reject
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            className="bg-primary hover:bg-primary/90"
-                            onClick={() => handleApprove(pendingUser.id)}
-                            disabled={approveUserMutation.isPending}
-                          >
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            Approve
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </motion.div>
-
-            {/* Organization Health & Activity Signals */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-              {/* Organization Health */}
+              {/* Role Distribution */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className="bg-card border border-border rounded-xl p-6"
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="bg-card border border-border rounded-xl p-6 mb-8"
               >
-                <h2 className="text-lg font-semibold text-foreground mb-4">Organization Health</h2>
-                <div className="space-y-4">
+                <h2 className="text-lg font-semibold text-foreground mb-4">Role Distribution</h2>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   {[
-                    { label: "Active Projects", value: "56", trend: "+3 this month", icon: FolderKanban, positive: true },
-                    { label: "Active Teams", value: "23", trend: "+2 this month", icon: UsersRound, positive: true },
-                    { label: "Total Contributors", value: "342", trend: "+18 this month", icon: Users, positive: true },
-                  ].map((metric) => (
-                    <div key={metric.label} className="flex items-center justify-between p-4 bg-accent/50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                          <metric.icon className="h-4 w-4 text-primary" />
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">{metric.label}</p>
-                          <p className="text-xl font-bold text-foreground">{metric.value}</p>
-                        </div>
+                    { role: "Admins", count: roleDistribution.admin, icon: Shield },
+                    { role: "Project Managers", count: roleDistribution.project_manager, icon: FolderKanban },
+                    { role: "Team Leads", count: roleDistribution.team_lead, icon: UsersRound },
+                    { role: "Members", count: roleDistribution.employee, icon: Users },
+                  ].map((item) => (
+                    <div key={item.role} className="flex items-center gap-3 p-4 bg-accent/50 rounded-lg">
+                      <div className="p-2 bg-primary/10 rounded-lg">
+                        <item.icon className="h-4 w-4 text-primary" />
                       </div>
-                      <div className="flex items-center gap-1 text-emerald-500">
-                        <TrendingUp className="h-4 w-4" />
-                        <span className="text-xs">{metric.trend}</span>
+                      <div>
+                        <p className="text-xl font-bold text-foreground">{item.count}</p>
+                        <p className="text-xs text-muted-foreground">{item.role}</p>
                       </div>
                     </div>
                   ))}
                 </div>
               </motion.div>
 
-              {/* Commit Activity Chart */}
+              {/* Pending Approvals - High Priority */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.5 }}
-                className="bg-card border border-border rounded-xl p-6"
+                transition={{ duration: 0.5, delay: 0.3 }}
+                className="bg-card border-2 border-warning/50 rounded-xl p-6 mb-8"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-warning/10 rounded-lg">
+                      <Clock className="h-5 w-5 text-warning" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-semibold text-foreground">Pending Approvals</h2>
+                      <p className="text-sm text-muted-foreground">Users awaiting your approval</p>
+                    </div>
+                  </div>
+                  <Badge variant="secondary" className="bg-warning/10 text-warning border-warning/20">
+                    {pendingUsers.length} pending
+                  </Badge>
+                </div>
+                
+                <div className="space-y-3">
+                  {isLoadingPending ? (
+                    <div className="flex items-center justify-center p-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : pendingUsers.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-4">No pending approvals</p>
+                  ) : (
+                    pendingUsers.map((pendingUser) => (
+                      <div
+                        key={pendingUser.id}
+                        className="flex items-center justify-between p-4 bg-accent/50 rounded-lg"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
+                            <span className="text-sm font-medium text-primary">
+                              {pendingUser.full_name.split(' ').map(n => n[0]).join('')}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-foreground">{pendingUser.full_name}</p>
+                            <p className="text-xs text-muted-foreground">{pendingUser.email}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs text-muted-foreground hidden sm:block">
+                            Requested {pendingUser.created_at ? format(new Date(pendingUser.created_at), "MMM d, yyyy") : "N/A"}
+                          </span>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => handleReject(pendingUser.id)}
+                              disabled={rejectUserMutation.isPending}
+                            >
+                              <XCircle className="h-4 w-4 mr-1" />
+                              Reject
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              className="bg-primary hover:bg-primary/90"
+                              onClick={() => handleApprove(pendingUser.id)}
+                              disabled={approveUserMutation.isPending}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Approve
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </motion.div>
+
+              {/* Organization Health & Activity Signals */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                {/* Organization Health */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                  className="bg-card border border-border rounded-xl p-6"
+                >
+                  <h2 className="text-lg font-semibold text-foreground mb-4">Organization Health</h2>
+                  <div className="space-y-4">
+                    {[
+                      { label: "Active Projects", value: "56", trend: "+3 this month", icon: FolderKanban, positive: true },
+                      { label: "Active Teams", value: "23", trend: "+2 this month", icon: UsersRound, positive: true },
+                      { label: "Total Contributors", value: "342", trend: "+18 this month", icon: Users, positive: true },
+                    ].map((metric) => (
+                      <div key={metric.label} className="flex items-center justify-between p-4 bg-accent/50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-primary/10 rounded-lg">
+                            <metric.icon className="h-4 w-4 text-primary" />
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">{metric.label}</p>
+                            <p className="text-xl font-bold text-foreground">{metric.value}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 text-emerald-500">
+                          <TrendingUp className="h-4 w-4" />
+                          <span className="text-xs">{metric.trend}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+
+                {/* Commit Activity Chart */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.5 }}
+                  className="bg-card border border-border rounded-xl p-6"
+                >
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <GitCommit className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-semibold text-foreground">Commit Activity</h2>
+                      <p className="text-sm text-muted-foreground">Last 7 days</p>
+                    </div>
+                  </div>
+                  <div className="h-48">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={commitActivityData}>
+                        <defs>
+                          <linearGradient id="commitGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "hsl(var(--card))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: "8px",
+                          }}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="commits"
+                          stroke="hsl(var(--primary))"
+                          fillOpacity={1}
+                          fill="url(#commitGradient)"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </motion.div>
+              </div>
+
+              {/* Contributor Trend Chart */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.6 }}
+                className="bg-card border border-border rounded-xl p-6 mb-8"
               >
                 <div className="flex items-center gap-3 mb-4">
                   <div className="p-2 bg-primary/10 rounded-lg">
-                    <GitCommit className="h-5 w-5 text-primary" />
+                    <Users className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-semibold text-foreground">Commit Activity</h2>
-                    <p className="text-sm text-muted-foreground">Last 7 days</p>
+                    <h2 className="text-lg font-semibold text-foreground">Active Contributors Trend</h2>
+                    <p className="text-sm text-muted-foreground">Weekly growth</p>
                   </div>
                 </div>
                 <div className="h-48">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={commitActivityData}>
-                      <defs>
-                        <linearGradient id="commitGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
+                    <LineChart data={contributorTrendData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                       <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
                       <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
@@ -395,104 +504,74 @@ const AdminDashboard = () => {
                           borderRadius: "8px",
                         }}
                       />
-                      <Area
+                      <Line
                         type="monotone"
-                        dataKey="commits"
+                        dataKey="contributors"
                         stroke="hsl(var(--primary))"
-                        fillOpacity={1}
-                        fill="url(#commitGradient)"
+                        strokeWidth={2}
+                        dot={{ fill: "hsl(var(--primary))", strokeWidth: 2 }}
                       />
-                    </AreaChart>
+                    </LineChart>
                   </ResponsiveContainer>
                 </div>
               </motion.div>
-            </div>
 
-            {/* Contributor Trend Chart */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.6 }}
-              className="bg-card border border-border rounded-xl p-6 mb-8"
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Users className="h-5 w-5 text-primary" />
+              {/* Administrative Controls */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.7 }}
+              >
+                <h2 className="text-lg font-semibold text-foreground mb-4">Administrative Controls</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {[
+                    { 
+                      title: "User Management", 
+                      description: "View, edit, and manage all user accounts", 
+                      icon: Users,
+                      action: () => setActiveTab("users")
+                    },
+                    { 
+                      title: "Role Management", 
+                      description: "Configure roles and permissions", 
+                      icon: UserCog,
+                      action: () => setActiveTab("roles")
+                    },
+                    { 
+                      title: "Department Management", 
+                      description: "Organize teams and departments", 
+                      icon: Layers,
+                      action: () => setActiveTab("departments")
+                    },
+                  ].map((control) => (
+                    <button
+                      key={control.title}
+                      onClick={control.action}
+                      className="group bg-card border border-border rounded-xl p-6 hover:border-primary/50 transition-colors text-left"
+                    >
+                      <div className="p-3 bg-primary/10 rounded-lg w-fit mb-4 group-hover:bg-primary/20 transition-colors">
+                        <control.icon className="h-6 w-6 text-primary" />
+                      </div>
+                      <h3 className="font-semibold text-foreground mb-1">{control.title}</h3>
+                      <p className="text-sm text-muted-foreground">{control.description}</p>
+                    </button>
+                  ))}
                 </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-foreground">Active Contributors Trend</h2>
-                  <p className="text-sm text-muted-foreground">Weekly growth</p>
-                </div>
-              </div>
-              <div className="h-48">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={contributorTrendData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "8px",
-                      }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="contributors"
-                      stroke="hsl(var(--primary))"
-                      strokeWidth={2}
-                      dot={{ fill: "hsl(var(--primary))", strokeWidth: 2 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
+              </motion.div>
             </motion.div>
+          )}
 
-            {/* Administrative Controls */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.7 }}
-            >
-              <h2 className="text-lg font-semibold text-foreground mb-4">Administrative Controls</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {[
-                  { 
-                    title: "User Management", 
-                    description: "View, edit, and manage all user accounts", 
-                    icon: Users,
-                    href: "#"
-                  },
-                  { 
-                    title: "Role Management", 
-                    description: "Configure roles and permissions", 
-                    icon: UserCog,
-                    href: "#"
-                  },
-                  { 
-                    title: "Department Management", 
-                    description: "Organize teams and departments", 
-                    icon: Layers,
-                    href: "#"
-                  },
-                ].map((control) => (
-                  <a
-                    key={control.title}
-                    href={control.href}
-                    className="group bg-card border border-border rounded-xl p-6 hover:border-primary/50 transition-colors"
-                  >
-                    <div className="p-3 bg-primary/10 rounded-lg w-fit mb-4 group-hover:bg-primary/20 transition-colors">
-                      <control.icon className="h-6 w-6 text-primary" />
-                    </div>
-                    <h3 className="font-semibold text-foreground mb-1">{control.title}</h3>
-                    <p className="text-sm text-muted-foreground">{control.description}</p>
-                  </a>
-                ))}
-              </div>
-            </motion.div>
-          </motion.div>
+          {activeTab === "users" && <AdminUsers />}
+          {activeTab === "roles" && <AdminRoles />}
+          {activeTab === "departments" && <AdminDepartments />}
+          {activeTab === "settings" && <AdminSettings />}
         </div>
+
+        {/* Notification Panel */}
+        <NotificationPanel 
+          isOpen={isNotificationPanelOpen} 
+          onClose={() => setIsNotificationPanelOpen(false)} 
+        />
       </main>
     </div>
   );

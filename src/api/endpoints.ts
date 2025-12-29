@@ -17,6 +17,8 @@ export const ENDPOINTS = {
       ALL: `${API_BASE}${API_PREFIX}/admin/users`,
       APPROVE: (id: string) => `${API_BASE}${API_PREFIX}/admin/users/${id}/approve`,
       REJECT: (id: string) => `${API_BASE}${API_PREFIX}/admin/users/${id}/reject`,
+      BLOCK: (id: string) => `${API_BASE}${API_PREFIX}/admin/users/${id}/block`,
+      UNBLOCK: (id: string) => `${API_BASE}${API_PREFIX}/admin/users/${id}/unblock`,
       PROMOTE_ADMIN: `${API_BASE}${API_PREFIX}/admin/users/promote-admin`,
     },
     PLUGINS: {

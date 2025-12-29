@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Briefcase,
@@ -8,10 +8,22 @@ import {
   Bell,
   Search,
   LogOut,
+  Sun,
+  Moon,
+  User,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import TeamTuneLogo from "@/components/TeamTuneLogo";
 import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
 
 interface ProjectManagerLayoutProps {
@@ -52,12 +64,39 @@ export const ProjectManagerLayout = ({
   headerActions,
 }: ProjectManagerLayoutProps) => {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   const handleLogout = async () => {
     await logout();
+    navigate("/");
   };
+
+  const handleLogoClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    // Redirect to PM dashboard home instead of landing page
+    navigate("/dashboard/project-manager");
+  };
+
+  const toggleNotifications = () => {
+    setNotificationsEnabled(!notificationsEnabled);
+  };
+
+  // Extract user name from email for display
+  const getUserNameFromEmail = (email: string) => {
+    if (!email) return "User";
+    
+    const namePart = email.split('@')[0];
+    const nameParts = namePart.split(/[._-]/).map(part => 
+      part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+    );
+    
+    return nameParts.join(' ');
+  };
+
+  const displayName = user?.full_name || getUserNameFromEmail(user?.email || "");
 
   const isActive = (path: string) => {
     if (path === "/dashboard/project-manager") {
@@ -70,9 +109,9 @@ export const ProjectManagerLayout = ({
     <div className="min-h-screen bg-background">
       {/* Sidebar */}
       <aside className="fixed left-0 top-0 h-full w-64 bg-card border-r border-border p-6 hidden lg:flex flex-col">
-        <Link to="/">
+        <div onClick={handleLogoClick} className="cursor-pointer">
           <TeamTuneLogo />
-        </Link>
+        </div>
 
         <nav className="mt-8 flex-1">
           <div className="space-y-1">
@@ -116,7 +155,7 @@ export const ProjectManagerLayout = ({
         <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="lg:hidden">
+              <div className="lg:hidden" onClick={handleLogoClick}>
                 <TeamTuneLogo showText={false} />
               </div>
               <div className="relative">
@@ -129,23 +168,64 @@ export const ProjectManagerLayout = ({
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <button className="relative p-2 text-muted-foreground hover:text-foreground transition-colors">
+              {/* Theme Toggle */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleTheme}
+                className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {theme === 'dark' ? (
+                  <Sun className="h-5 w-5" />
+                ) : (
+                  <Moon className="h-5 w-5" />
+                )}
+              </Button>
+
+              {/* Notifications */}
+              <button 
+                onClick={toggleNotifications}
+                className="relative p-2 text-muted-foreground hover:text-foreground transition-colors"
+              >
                 <Bell className="h-5 w-5" />
-                <span className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full" />
+                {notificationsEnabled && (
+                  <span className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full" />
+                )}
               </button>
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center">
-                  <Briefcase className="h-4 w-4 text-primary-foreground" />
-                </div>
-                <div className="hidden sm:block">
-                  <p className="text-sm font-medium text-foreground">
-                    {user?.full_name || "Project Manager"}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {user?.email || "Project Manager"}
-                  </p>
-                </div>
-              </div>
+
+              {/* Profile Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center gap-3 p-2">
+                    <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center">
+                      <User className="h-4 w-4 text-primary-foreground" />
+                    </div>
+                    <div className="hidden sm:block text-left">
+                      <p className="text-sm font-medium text-foreground">
+                        {displayName}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {user?.email || "Project Manager"}
+                      </p>
+                    </div>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 text-destructive focus:text-destructive"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </header>

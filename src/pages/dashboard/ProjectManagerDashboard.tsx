@@ -40,6 +40,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ProjectManagerLayout } from "@/components/layouts/ProjectManagerLayout";
 import { useProjects, useEmployees, useCreateProject, useDeleteProject, useBulkDeleteProjects } from "@/hooks/useProjectManager";
+import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import type { CreateProjectRequest } from "@/api/types";
@@ -69,6 +70,32 @@ const ProjectManagerDashboard = () => {
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Date validation
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day
+    const startDate = new Date(newProject.start_date);
+    const endDate = new Date(newProject.end_date);
+
+    // Check if start date is in the past
+    if (startDate < today) {
+      toast({
+        title: "Invalid Start Date",
+        description: "Start date cannot be in the past",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if end date is before start date
+    if (endDate <= startDate) {
+      toast({
+        title: "Invalid End Date",
+        description: "End date must be after start date",
         variant: "destructive",
       });
       return;
@@ -197,17 +224,32 @@ const ProjectManagerDashboard = () => {
   }).length;
 
   const isLoading = isLoadingProjects || isLoadingEmployees;
+  // Extract user name from email for personalized greeting
+  const getUserNameFromEmail = (email: string) => {
+    if (!email) return "User";
+    
+    // Extract name part before @ symbol
+    const namePart = email.split('@')[0];
+    
+    // Split by dots, underscores, or hyphens and capitalize each part
+    const nameParts = namePart.split(/[._-]/).map(part => 
+      part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+    );
+    
+    return nameParts.join(' ');
+  };
+
+  const { user } = useAuth();
+  const displayName = user?.full_name || getUserNameFromEmail(user?.email || "");
+
   return (
-    <ProjectManagerLayout
-      headerTitle="Project Manager Dashboard"
-      headerDescription="Track project progress and manage team assignments."
-    >
+    <ProjectManagerLayout>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <h1 className="text-2xl font-bold text-foreground mb-2">Project Manager Dashboard</h1>
+            <h1 className="text-2xl font-bold text-foreground mb-2">Welcome back, {displayName}</h1>
             <p className="text-muted-foreground mb-8">Track project progress and manage team assignments.</p>
 
             {/* Stats Grid */}
@@ -501,6 +543,7 @@ const ProjectManagerDashboard = () => {
                   id="start_date"
                   type="date"
                   value={newProject.start_date}
+                  min={format(new Date(), 'yyyy-MM-dd')} // Prevent past dates
                   onChange={(e) => setNewProject({ ...newProject, start_date: e.target.value })}
                 />
               </div>
@@ -510,6 +553,7 @@ const ProjectManagerDashboard = () => {
                   id="end_date"
                   type="date"
                   value={newProject.end_date}
+                  min={newProject.start_date || format(new Date(), 'yyyy-MM-dd')} // Must be after start date
                   onChange={(e) => setNewProject({ ...newProject, end_date: e.target.value })}
                 />
               </div>

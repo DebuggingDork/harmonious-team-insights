@@ -10,6 +10,8 @@ import type {
   RejectUserResponse,
   PromoteToAdminRequest,
   PromoteToAdminResponse,
+  BlockUserResponse,
+  UnblockUserResponse,
   Plugin,
   UpdatePluginRequest,
   GitHubConnectResponse,
@@ -63,6 +65,22 @@ export const rejectUser = async (id: string, data: RejectUserRequest): Promise<R
  */
 export const promoteToAdmin = async (data: PromoteToAdminRequest): Promise<PromoteToAdminResponse> => {
   const response = await apiClient.post<PromoteToAdminResponse>(ENDPOINTS.ADMIN.USERS.PROMOTE_ADMIN, data);
+  return response.data;
+};
+
+/**
+ * Block a user
+ */
+export const blockUser = async (id: string): Promise<BlockUserResponse> => {
+  const response = await apiClient.post<BlockUserResponse>(ENDPOINTS.ADMIN.USERS.BLOCK(id));
+  return response.data;
+};
+
+/**
+ * Unblock a user
+ */
+export const unblockUser = async (id: string): Promise<UnblockUserResponse> => {
+  const response = await apiClient.post<UnblockUserResponse>(ENDPOINTS.ADMIN.USERS.UNBLOCK(id));
   return response.data;
 };
 
