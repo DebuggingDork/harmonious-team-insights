@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { 
   Users, 
   TrendingUp,
@@ -14,11 +14,47 @@ import {
   LogOut,
   User,
   Minus,
-  Loader2
+  Loader2,
+  Edit,
+  Trash2,
+  Filter,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import TeamTuneLogo from "@/components/TeamTuneLogo";
 import {
   ChartContainer,
@@ -27,9 +63,19 @@ import {
 } from "@/components/ui/chart";
 import { AreaChart, Area, XAxis, YAxis, BarChart, Bar } from "recharts";
 import { useAuth } from "@/hooks/useAuth";
-import { useTeamMetrics, useTeamPerformance, useTeamGitActivity, useCreateObservation } from "@/hooks/useTeamLead";
+import { 
+  useTeamMetrics, 
+  useTeamPerformance, 
+  useTeamGitActivity, 
+  useCreateObservation,
+  useMemberObservations,
+  useUpdateObservation,
+  useDeleteObservation
+} from "@/hooks/useTeamLead";
 import { useMyTeams } from "@/hooks/useEmployee";
 import { format } from "date-fns";
+import type { ObservationCategory, ObservationRating, Observation } from "@/api/types";
+import { toast } from "@/hooks/use-toast";
 
 // Helper function to calculate date ranges
 const getDateRanges = () => {
@@ -86,6 +132,15 @@ const TeamLeadDashboard = () => {
   const { user, logout } = useAuth();
   const [feedbackText, setFeedbackText] = useState("");
   const [selectedMemberCode, setSelectedMemberCode] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<ObservationCategory>("collaboration");
+  const [selectedRating, setSelectedRating] = useState<ObservationRating>("positive");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [filterMemberCode, setFilterMemberCode] = useState<string>("");
+  const [filterCategory, setFilterCategory] = useState<string>("");
+  const [editingObservation, setEditingObservation] = useState<Observation | null>(null);
+  const [deletingObservation, setDeletingObservation] = useState<Observation | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
   // Get teams for the current user (team lead)
   const { data: teamsData, isLoading: isLoadingTeams } = useMyTeams();
@@ -123,6 +178,25 @@ const TeamLeadDashboard = () => {
 
   // Create observation mutation
   const createObservationMutation = useCreateObservation();
+  const updateObservationMutation = useUpdateObservation();
+  const deleteObservationMutation = useDeleteObservation();
+
+  // Fetch observations for all team members
+  const allObservations = useMemo(() => {
+    if (!teamPerformance?.members || !teamCode) return [];
+    
+    // We'll fetch observations for each member
+    // For now, we'll use a simplified approach - fetch for the first member as example
+    // In a real implementation, you might want to fetch all at once or use a different endpoint
+    return [];
+  }, [teamPerformance, teamCode]);
+
+  // Get observations for filtered member
+  const { data: observationsData, isLoading: isLoadingObservations } = useMemberObservations(
+    teamCode || "",
+    filterMemberCode || selectedMemberCode || "",
+    { page: 1, limit: 50 }
+  );
 
   const handleLogout = async () => {
     await logout();
@@ -130,6 +204,11 @@ const TeamLeadDashboard = () => {
 
   const handleCreateFeedback = async () => {
     if (!teamCode || !selectedMemberCode || !feedbackText.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please select a team member and enter feedback text.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -137,8 +216,8 @@ const TeamLeadDashboard = () => {
       teamCode,
       userCode: selectedMemberCode,
       data: {
-        category: "collaboration",
-        rating: "positive",
+        category: selectedCategory,
+        rating: selectedRating,
         note: feedbackText,
         observation_date: new Date().toISOString().split('T')[0],
       },
@@ -146,21 +225,115 @@ const TeamLeadDashboard = () => {
       onSuccess: () => {
         setFeedbackText("");
         setSelectedMemberCode("");
+        setSelectedCategory("collaboration");
+        setSelectedRating("positive");
+        toast({
+          title: "Success",
+          description: "Feedback created successfully.",
+        });
+      },
+      onError: (error: any) => {
+        toast({
+          title: "Error",
+          description: error?.response?.data?.message || "Failed to create feedback.",
+          variant: "destructive",
+        });
       },
     });
   };
 
+  const handleEditObservation = (observation: Observation) => {
+    setEditingObservation(observation);
+    setFeedbackText(observation.note);
+    setSelectedCategory(observation.category);
+    setSelectedRating(observation.rating);
+    setSelectedMemberCode(observation.user_code);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateObservation = async () => {
+    if (!editingObservation || !feedbackText.trim()) {
+      return;
+    }
+
+    updateObservationMutation.mutate({
+      observationCode: editingObservation.observation_code,
+      data: {
+        category: selectedCategory,
+        rating: selectedRating,
+        note: feedbackText,
+      },
+    }, {
+      onSuccess: () => {
+        setIsEditDialogOpen(false);
+        setEditingObservation(null);
+        setFeedbackText("");
+        setSelectedMemberCode("");
+        setSelectedCategory("collaboration");
+        setSelectedRating("positive");
+        toast({
+          title: "Success",
+          description: "Feedback updated successfully.",
+        });
+      },
+      onError: (error: any) => {
+        toast({
+          title: "Error",
+          description: error?.response?.data?.message || "Failed to update feedback.",
+          variant: "destructive",
+        });
+      },
+    });
+  };
+
+  const handleDeleteObservation = (observation: Observation) => {
+    setDeletingObservation(observation);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteObservation = async () => {
+    if (!deletingObservation) return;
+
+    deleteObservationMutation.mutate(deletingObservation.observation_code, {
+      onSuccess: () => {
+        setIsDeleteDialogOpen(false);
+        setDeletingObservation(null);
+        toast({
+          title: "Success",
+          description: "Feedback deleted successfully.",
+        });
+      },
+      onError: (error: any) => {
+        toast({
+          title: "Error",
+          description: error?.response?.data?.message || "Failed to delete feedback.",
+          variant: "destructive",
+        });
+      },
+    });
+  };
+
+  // Filter observations
+  const filteredObservations = useMemo(() => {
+    if (!observationsData?.observations) return [];
+    
+    return observationsData.observations.filter((obs) => {
+      if (filterCategory && obs.category !== filterCategory) return false;
+      return true;
+    });
+  }, [observationsData, filterCategory]);
+
   // Transform data for display
   const teamData = useMemo(() => {
-    if (!teamMetrics || !teamsData?.teams?.[0]) return null;
+    if (!teamsData?.teams?.[0]) return null;
     const team = teamsData.teams[0];
     return {
-      name: team.team_name || "Team",
+      name: team.name || "Team",
       project: team.project_name || "Project",
-      size: teamMetrics.members_summary?.total_members || 0,
+      size: teamPerformance?.members_summary?.total_members || 0,
       status: "Active",
     };
-  }, [teamMetrics, teamsData]);
+  }, [teamsData, teamPerformance]);
 
   // Transform performance data for member activity
   const memberActivityData = useMemo(() => {
@@ -198,7 +371,7 @@ const TeamLeadDashboard = () => {
     
     return Array.from({ length: weeks }, (_, i) => ({
       week: `W${i + 1}`,
-      contributions: avgContributionsPerWeek + Math.floor(Math.random() * 10 - 5), // Add some variation
+      contributions: avgContributionsPerWeek,
       activeMembers: activeMembersCount,
     }));
   }, [gitActivity]);
@@ -262,7 +435,10 @@ const TeamLeadDashboard = () => {
         <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="lg:hidden">
+              <div 
+                className="lg:hidden cursor-pointer"
+                onClick={() => setIsMobileMenuOpen(true)}
+              >
                 <TeamTuneLogo showText={false} />
               </div>
               <div className="relative">
@@ -398,7 +574,7 @@ const TeamLeadDashboard = () => {
             </Card>
 
             {/* Execution Trends */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6" data-section="trends">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -519,7 +695,7 @@ const TeamLeadDashboard = () => {
             </Card>
 
             {/* Feedback & Notes */}
-            <Card>
+            <Card data-section="feedback">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <MessageSquare className="h-5 w-5 text-primary" />
@@ -527,61 +703,395 @@ const TeamLeadDashboard = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="mb-6">
-                  <label className="text-sm font-medium text-foreground mb-2 block">Add New Feedback</label>
+                {/* Add New Feedback Form */}
+                <div className="mb-6 p-4 bg-accent/30 rounded-lg border border-border">
+                  <label className="text-sm font-medium text-foreground mb-3 block">Add New Feedback</label>
                   {hasTeamCode && memberActivityData.length > 0 && (
-                    <select
-                      value={selectedMemberCode}
-                      onChange={(e) => setSelectedMemberCode(e.target.value)}
-                      className="w-full mb-2 px-3 py-2 bg-accent border border-border rounded-lg text-sm"
-                    >
-                      <option value="">Select team member</option>
-                      {memberActivityData.map((member) => (
-                        <option key={member.userCode} value={member.userCode}>
-                          {member.name}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="space-y-3">
+                      <Select
+                        value={selectedMemberCode}
+                        onValueChange={setSelectedMemberCode}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select team member" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {memberActivityData.map((member) => (
+                            <SelectItem key={member.userCode} value={member.userCode}>
+                              {member.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <Select
+                          value={selectedCategory}
+                          onValueChange={(value) => setSelectedCategory(value as ObservationCategory)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="technical">Technical</SelectItem>
+                            <SelectItem value="communication">Communication</SelectItem>
+                            <SelectItem value="leadership">Leadership</SelectItem>
+                            <SelectItem value="delivery">Delivery</SelectItem>
+                            <SelectItem value="quality">Quality</SelectItem>
+                            <SelectItem value="collaboration">Collaboration</SelectItem>
+                          </SelectContent>
+                        </Select>
+
+                        <Select
+                          value={selectedRating}
+                          onValueChange={(value) => setSelectedRating(value as ObservationRating)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Rating" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="positive">Positive</SelectItem>
+                            <SelectItem value="neutral">Neutral</SelectItem>
+                            <SelectItem value="negative">Negative</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <Textarea 
+                        placeholder="Write supportive feedback for a team member..."
+                        className="min-h-[100px]"
+                        value={feedbackText}
+                        onChange={(e) => setFeedbackText(e.target.value)}
+                      />
+                      <Button 
+                        size="sm"
+                        onClick={handleCreateFeedback}
+                        disabled={!selectedMemberCode || !feedbackText.trim() || createObservationMutation.isPending}
+                        className="w-full"
+                      >
+                        {createObservationMutation.isPending ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          "Save Feedback"
+                        )}
+                      </Button>
+                    </div>
                   )}
-                  <Textarea 
-                    placeholder="Write supportive feedback for a team member..."
-                    className="mb-2"
-                    value={feedbackText}
-                    onChange={(e) => setFeedbackText(e.target.value)}
-                  />
-                  <Button 
-                    size="sm"
-                    onClick={handleCreateFeedback}
-                    disabled={!selectedMemberCode || !feedbackText.trim() || createObservationMutation.isPending}
-                  >
-                    {createObservationMutation.isPending ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      "Save Feedback"
-                    )}
-                  </Button>
                 </div>
                 
+                {/* Feedback History */}
                 <div className="border-t border-border pt-4">
-                  <h4 className="text-sm font-medium text-foreground mb-3">Recent Feedback</h4>
-                  {isLoadingPerformance ? (
-                    <div className="flex items-center justify-center p-4">
-                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-sm font-medium text-foreground">Feedback History</h4>
+                    <div className="flex items-center gap-2">
+                      <Select
+                        value={filterMemberCode}
+                        onValueChange={setFilterMemberCode}
+                      >
+                        <SelectTrigger className="w-[150px]">
+                          <SelectValue placeholder="Filter by member" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">All Members</SelectItem>
+                          {memberActivityData.map((member) => (
+                            <SelectItem key={member.userCode} value={member.userCode}>
+                              {member.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select
+                        value={filterCategory}
+                        onValueChange={setFilterCategory}
+                      >
+                        <SelectTrigger className="w-[150px]">
+                          <SelectValue placeholder="Filter by category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">All Categories</SelectItem>
+                          <SelectItem value="technical">Technical</SelectItem>
+                          <SelectItem value="communication">Communication</SelectItem>
+                          <SelectItem value="leadership">Leadership</SelectItem>
+                          <SelectItem value="delivery">Delivery</SelectItem>
+                          <SelectItem value="quality">Quality</SelectItem>
+                          <SelectItem value="collaboration">Collaboration</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {(filterMemberCode || filterCategory) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setFilterMemberCode("");
+                            setFilterCategory("");
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
-                  ) : (
-                    <p className="text-center text-muted-foreground py-4 text-sm">
-                      Feedback history will be displayed here when observations are created.
+                  </div>
+
+                  {isLoadingObservations ? (
+                    <div className="flex items-center justify-center p-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : filteredObservations.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8 text-sm">
+                      {filterMemberCode || filterCategory 
+                        ? "No feedback found matching the filters."
+                        : "No feedback has been created yet. Start by adding feedback above."}
                     </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {filteredObservations.map((observation) => (
+                        <motion.div
+                          key={observation.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="p-4 bg-accent/30 rounded-lg border border-border hover:bg-accent/50 transition-colors"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="font-medium text-foreground">{observation.user_name}</span>
+                                <Badge 
+                                  variant={
+                                    observation.rating === "positive" ? "default" :
+                                    observation.rating === "neutral" ? "secondary" : "destructive"
+                                  }
+                                  className="text-xs"
+                                >
+                                  {observation.rating}
+                                </Badge>
+                                <Badge variant="outline" className="text-xs">
+                                  {observation.category}
+                                </Badge>
+                                {observation.related_task_title && (
+                                  <Badge variant="outline" className="text-xs">
+                                    Task: {observation.related_task_code}
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-sm text-foreground mb-2">{observation.note}</p>
+                              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                <span>{format(new Date(observation.observation_date), "MMM d, yyyy")}</span>
+                                <span>•</span>
+                                <span>{format(new Date(observation.created_at), "MMM d, yyyy 'at' h:mm a")}</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditObservation(observation)}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteObservation(observation)}
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
                   )}
                 </div>
               </CardContent>
             </Card>
+
+            {/* Edit Feedback Dialog */}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Edit Feedback</DialogTitle>
+                  <DialogDescription>
+                    Update the feedback details below.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <Select
+                      value={selectedCategory}
+                      onValueChange={(value) => setSelectedCategory(value as ObservationCategory)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="technical">Technical</SelectItem>
+                        <SelectItem value="communication">Communication</SelectItem>
+                        <SelectItem value="leadership">Leadership</SelectItem>
+                        <SelectItem value="delivery">Delivery</SelectItem>
+                        <SelectItem value="quality">Quality</SelectItem>
+                        <SelectItem value="collaboration">Collaboration</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select
+                      value={selectedRating}
+                      onValueChange={(value) => setSelectedRating(value as ObservationRating)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Rating" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="positive">Positive</SelectItem>
+                        <SelectItem value="neutral">Neutral</SelectItem>
+                        <SelectItem value="negative">Negative</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <Textarea 
+                    placeholder="Feedback note..."
+                    className="min-h-[100px]"
+                    value={feedbackText}
+                    onChange={(e) => setFeedbackText(e.target.value)}
+                  />
+                </div>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsEditDialogOpen(false);
+                      setEditingObservation(null);
+                      setFeedbackText("");
+                      setSelectedMemberCode("");
+                      setSelectedCategory("collaboration");
+                      setSelectedRating("positive");
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleUpdateObservation}
+                    disabled={!feedbackText.trim() || updateObservationMutation.isPending}
+                  >
+                    {updateObservationMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Updating...
+                      </>
+                    ) : (
+                      "Update Feedback"
+                    )}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Feedback</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete this feedback? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel onClick={() => setDeletingObservation(null)}>
+                    Cancel
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={confirmDeleteObservation}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {deleteObservationMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Deleting...
+                      </>
+                    ) : (
+                      "Delete"
+                    )}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </motion.div>
         </div>
       </main>
+
+      {/* Mobile Sidebar */}
+      <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+        <SheetContent side="left" className="w-64 p-0">
+          <SheetHeader className="p-6 border-b border-border">
+            <SheetTitle className="text-left">
+              <Link to="/" onClick={() => setIsMobileMenuOpen(false)}>
+                <TeamTuneLogo />
+              </Link>
+            </SheetTitle>
+          </SheetHeader>
+          <nav className="flex-1 p-6">
+            <div className="space-y-1">
+              <button 
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  // Scroll to top or handle navigation if needed
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground bg-accent rounded-lg w-full text-left transition-colors"
+              >
+                <Users className="h-4 w-4" />
+                Team Overview
+              </button>
+              <button 
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  // Scroll to execution trends section if needed
+                  const trendsSection = document.querySelector('[data-section="trends"]');
+                  if (trendsSection) {
+                    trendsSection.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+                className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors w-full text-left"
+              >
+                <Activity className="h-4 w-4" />
+                Execution Trends
+              </button>
+              <button 
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  // Scroll to feedback section if needed
+                  const feedbackSection = document.querySelector('[data-section="feedback"]');
+                  if (feedbackSection) {
+                    feedbackSection.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+                className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors w-full text-left"
+              >
+                <MessageSquare className="h-4 w-4" />
+                Feedback
+              </button>
+            </div>
+          </nav>
+          <div className="border-t border-border p-6">
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start gap-2 text-muted-foreground"
+              onClick={async () => {
+                await handleLogout();
+                setIsMobileMenuOpen(false);
+              }}
+            >
+              <LogOut className="h-4 w-4" />
+              Sign out
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };

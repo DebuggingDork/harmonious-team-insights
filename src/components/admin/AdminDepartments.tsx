@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Building2, 
   Users, 
@@ -45,6 +45,8 @@ interface Department {
 
 const AdminDepartments = () => {
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -52,7 +54,31 @@ const AdminDepartments = () => {
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
   const [newDepartmentName, setNewDepartmentName] = useState("");
   const [editDepartmentName, setEditDepartmentName] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch departments on component mount
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      setIsInitialLoading(true);
+      try {
+        // TODO: Replace with actual API call when department endpoints are implemented
+        // Example:
+        // const response = await apiClient.get<Department[]>(ENDPOINTS.ADMIN.DEPARTMENTS.LIST);
+        // setDepartments(response.data);
+        
+        // For now, departments array remains empty until API is implemented
+        // This ensures the component shows the empty state correctly
+        setDepartments([]);
+      } catch (error) {
+        console.error("Failed to fetch departments:", error);
+        // On error, keep empty array and show empty state
+        setDepartments([]);
+      } finally {
+        setIsInitialLoading(false);
+      }
+    };
+
+    fetchDepartments();
+  }, []);
 
   const activeDepartments = departments.filter(d => d.status === "active");
   const archivedDepartments = departments.filter(d => d.status === "archived");
@@ -230,10 +256,16 @@ const AdminDepartments = () => {
               <div className="flex items-center justify-between mb-3">
                 <p className="text-sm text-muted-foreground">{stat.label}</p>
                 <div className={`p-2 rounded-lg ${stat.color}`}>
-                  <Icon className="h-4 w-4" />
+                  {isInitialLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Icon className="h-4 w-4" />
+                  )}
                 </div>
               </div>
-              <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+              <p className="text-2xl font-bold text-foreground">
+                {isInitialLoading ? "..." : stat.value}
+              </p>
             </div>
           );
         })}
@@ -246,10 +278,17 @@ const AdminDepartments = () => {
           <Badge variant="secondary">{activeDepartments.length} departments</Badge>
         </div>
 
-        {activeDepartments.length === 0 ? (
+        {isInitialLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : activeDepartments.length === 0 ? (
           <div className="text-center py-8">
             <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">No active departments</p>
+            <p className="text-xs text-muted-foreground mt-2">
+              Create your first department to get started
+            </p>
           </div>
         ) : (
           <div className="space-y-3">
