@@ -195,11 +195,19 @@ export const useUpdateMyProfile = () => {
 /**
  * Get my teams
  */
-export const useMyTeams = (params?: { page?: number; limit?: number }) => {
+export const useMyTeams = (params?: { page?: number; limit?: number }, enabled: boolean = true) => {
   return useQuery({
     queryKey: employeeKeys.teams.list(params),
     queryFn: () => employeeService.getMyTeams(params),
     staleTime: 30000,
+    enabled,
+    retry: (failureCount, error: any) => {
+      // Don't retry on 403 Forbidden errors
+      if (error?.status === 403) {
+        return false;
+      }
+      return failureCount < 2;
+    },
   });
 };
 

@@ -129,21 +129,21 @@ const ConsistencyIndicator = ({ level }: { level: string }) => {
 };
 
 const TeamLeadDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated } = useAuth();
   const [feedbackText, setFeedbackText] = useState("");
   const [selectedMemberCode, setSelectedMemberCode] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<ObservationCategory>("collaboration");
   const [selectedRating, setSelectedRating] = useState<ObservationRating>("positive");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [filterMemberCode, setFilterMemberCode] = useState<string>("");
-  const [filterCategory, setFilterCategory] = useState<string>("");
+  const [filterMemberCode, setFilterMemberCode] = useState<string>("all");
+  const [filterCategory, setFilterCategory] = useState<string>("all");
   const [editingObservation, setEditingObservation] = useState<Observation | null>(null);
   const [deletingObservation, setDeletingObservation] = useState<Observation | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
-  // Get teams for the current user (team lead)
-  const { data: teamsData, isLoading: isLoadingTeams } = useMyTeams();
+  // Get teams for the current user (team lead) - only when authenticated
+  const { data: teamsData, isLoading: isLoadingTeams, error: teamsError } = useMyTeams(undefined, isAuthenticated);
   
   // Get the first team code (assuming team lead has at least one team)
   const teamCode = useMemo(() => {
@@ -155,7 +155,7 @@ const TeamLeadDashboard = () => {
 
   const dateRanges = useMemo(() => getDateRanges(), []);
 
-  // Get team metrics
+  // Get team metrics (hook already handles enabled state based on teamCode)
   const { data: teamMetrics, isLoading: isLoadingMetrics } = useTeamMetrics(teamCode || "");
   
   // Get team performance
@@ -191,12 +191,6 @@ const TeamLeadDashboard = () => {
     return [];
   }, [teamPerformance, teamCode]);
 
-  // Get observations for filtered member
-  const { data: observationsData, isLoading: isLoadingObservations } = useMemberObservations(
-    teamCode || "",
-    filterMemberCode || selectedMemberCode || "",
-    { page: 1, limit: 50 }
-  );
 
   const handleLogout = async () => {
     await logout();
@@ -313,16 +307,6 @@ const TeamLeadDashboard = () => {
     });
   };
 
-  // Filter observations
-  const filteredObservations = useMemo(() => {
-    if (!observationsData?.observations) return [];
-    
-    return observationsData.observations.filter((obs) => {
-      if (filterCategory && obs.category !== filterCategory) return false;
-      return true;
-    });
-  }, [observationsData, filterCategory]);
-
   // Transform data for display
   const teamData = useMemo(() => {
     if (!teamsData?.teams?.[0]) return null;
@@ -354,6 +338,28 @@ const TeamLeadDashboard = () => {
       };
     });
   }, [teamPerformance]);
+
+  // Get observations for filtered member
+  // If "all" is selected, use the first member's code or selectedMemberCode if available
+  const memberCodeToFetch = filterMemberCode !== "all" 
+    ? filterMemberCode 
+    : (selectedMemberCode || (memberActivityData.length > 0 ? memberActivityData[0].userCode : ""));
+  const { data: observationsData, isLoading: isLoadingObservations } = useMemberObservations(
+    teamCode || "",
+    memberCodeToFetch,
+    { page: 1, limit: 50 }
+  );
+
+  // Filter observations
+  const filteredObservations = useMemo(() => {
+    if (!observationsData?.observations) return [];
+    
+    return observationsData.observations.filter((obs) => {
+      if (filterCategory && filterCategory !== "all" && obs.category !== filterCategory) return false;
+      if (filterMemberCode && filterMemberCode !== "all" && obs.user_code !== filterMemberCode) return false;
+      return true;
+    });
+  }, [observationsData, filterCategory, filterMemberCode]);
 
   // Transform git activity for execution trends
   const executionTrendData = useMemo(() => {
@@ -795,7 +801,7 @@ const TeamLeadDashboard = () => {
                           <SelectValue placeholder="Filter by member" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">All Members</SelectItem>
+                          <SelectItem value="all">All Members</SelectItem>
                           {memberActivityData.map((member) => (
                             <SelectItem key={member.userCode} value={member.userCode}>
                               {member.name}
@@ -811,7 +817,7 @@ const TeamLeadDashboard = () => {
                           <SelectValue placeholder="Filter by category" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">All Categories</SelectItem>
+                          <SelectItem value="all">All Categories</SelectItem>
                           <SelectItem value="technical">Technical</SelectItem>
                           <SelectItem value="communication">Communication</SelectItem>
                           <SelectItem value="leadership">Leadership</SelectItem>
@@ -820,13 +826,13 @@ const TeamLeadDashboard = () => {
                           <SelectItem value="collaboration">Collaboration</SelectItem>
                         </SelectContent>
                       </Select>
-                      {(filterMemberCode || filterCategory) && (
+                      {(filterMemberCode !== "all" || filterCategory !== "all") && (
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => {
-                            setFilterMemberCode("");
-                            setFilterCategory("");
+                            setFilterMemberCode("all");
+                            setFilterCategory("all");
                           }}
                         >
                           <X className="h-4 w-4" />
@@ -841,7 +847,7 @@ const TeamLeadDashboard = () => {
                     </div>
                   ) : filteredObservations.length === 0 ? (
                     <p className="text-center text-muted-foreground py-8 text-sm">
-                      {filterMemberCode || filterCategory 
+                      {filterMemberCode !== "all" || filterCategory !== "all"
                         ? "No feedback found matching the filters."
                         : "No feedback has been created yet. Start by adding feedback above."}
                     </p>
