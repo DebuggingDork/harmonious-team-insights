@@ -55,10 +55,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const response = await authService.login({ email, password });
       
+      // Debug logging
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Login response:', {
+          hasToken: !!response.token,
+          user: response.user,
+          userRole: response.user?.role,
+        });
+      }
+      
       // Store token and user
       setToken(response.token);
       setUser(response.user);
       setUserState(response.user);
+      
+      // Verify user was stored
+      if (process.env.NODE_ENV === 'development') {
+        setTimeout(() => {
+          const storedUser = getUser<User>();
+          console.log('Stored user after login:', storedUser);
+        }, 100);
+      }
     } catch (error) {
       handleError(error, 'Login failed. Please check your credentials.');
       throw error;
@@ -89,7 +106,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const hasRole = (role: string): boolean => {
-    return user?.role === role;
+    if (!user?.role) return false;
+    
+    // Normalize roles for comparison (handle case and format differences)
+    const userRole = user.role.toLowerCase().trim();
+    const requiredRole = role.toLowerCase().trim();
+    const matches = userRole === requiredRole;
+    
+    // Debug logging (remove in production)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('hasRole check:', { 
+        userRole: user.role, 
+        normalizedUserRole: userRole,
+        requiredRole: role,
+        normalizedRequiredRole: requiredRole,
+        matches 
+      });
+    }
+    
+    return matches;
   };
 
   const value: AuthContextType = {

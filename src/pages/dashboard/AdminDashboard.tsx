@@ -106,26 +106,26 @@ const AdminDashboard = () => {
         
         <nav className="mt-8 flex-1">
           <div className="space-y-1">
-            <a href="#" className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground bg-accent rounded-lg">
+            <button className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground bg-accent rounded-lg w-full text-left">
               <BarChart3 className="h-4 w-4" />
               Dashboard
-            </a>
-            <a href="#" className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors">
+            </button>
+            <button className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors w-full text-left">
               <Users className="h-4 w-4" />
               Users
-            </a>
-            <a href="#" className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors">
+            </button>
+            <button className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors w-full text-left">
               <UserCog className="h-4 w-4" />
               Roles
-            </a>
-            <a href="#" className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors">
+            </button>
+            <button className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors w-full text-left">
               <Building2 className="h-4 w-4" />
               Departments
-            </a>
-            <a href="#" className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors">
+            </button>
+            <button className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors w-full text-left">
               <Settings className="h-4 w-4" />
               Settings
-            </a>
+            </button>
           </div>
         </nav>
 

@@ -3,9 +3,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Pricing from "./pages/Pricing";
@@ -22,6 +24,9 @@ import PendingApproval from "./pages/auth/PendingApproval";
 // Dashboard pages
 import AdminDashboard from "./pages/dashboard/AdminDashboard";
 import ProjectManagerDashboard from "./pages/dashboard/ProjectManagerDashboard";
+import ProjectsPage from "./pages/dashboard/ProjectsPage";
+import TimelinePage from "./pages/dashboard/TimelinePage";
+import ProjectDetail from "./pages/dashboard/ProjectDetail";
 import TeamLeadDashboard from "./pages/dashboard/TeamLeadDashboard";
 import MemberDashboard from "./pages/dashboard/MemberDashboard";
 
@@ -39,14 +44,31 @@ const queryClient = new QueryClient({
   },
 });
 
+// Component to clean up URL hash
+const HashCleaner = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    // Remove any hash from URL
+    if (window.location.hash) {
+      const cleanUrl = window.location.pathname + window.location.search;
+      window.history.replaceState(null, '', cleanUrl);
+    }
+  }, [location]);
+
+  return null;
+};
+
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <HashCleaner />
+            <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/pricing" element={<Pricing />} />
 
@@ -77,6 +99,30 @@ const App = () => (
               }
             />
             <Route
+              path="/dashboard/project-manager/projects"
+              element={
+                <ProtectedRoute requiredRole="project_manager">
+                  <ProjectsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/project-manager/timeline"
+              element={
+                <ProtectedRoute requiredRole="project_manager">
+                  <TimelinePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/project-manager/projects/:projectCode"
+              element={
+                <ProtectedRoute requiredRole="project_manager">
+                  <ProjectDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/dashboard/team-lead"
               element={
                 <ProtectedRoute requiredRole="team_lead">
@@ -100,6 +146,7 @@ const App = () => (
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

@@ -653,7 +653,16 @@ Implemented endpoints only:
   }
 }
 ```
-
+Single Delete:
+DELETE /api/project-manager/projects/PROJ00000001Authorization: Bearer <token>
+Bulk Delete:
+DELETE /api/project-manager/projects/bulkAuthorization: Bearer <token>Content-Type: application/json{  "project_codes": ["PROJ00000001", "PROJ00000002", "PROJ00000003"]}
+Response examples
+Single Delete Response:
+{  "message": "Project deleted successfully",  "project_code": "PROJ00000001"}
+Bulk Delete Response:
+{  "message": "Bulk delete completed: 2 deleted, 1 failed",  "deleted": ["PROJ00000001", "PROJ00000002"],  "failed": [    {      "project_code": "PROJ00000003",      "error": "You do not have access to this project"    }  ],  "total_requested": 3,  "total_deleted": 2,  "total_failed": 1}
+All endpoints are protected by authentication and require the project_manager role. The implementation is ready to use.
 ---
 
 ### 27. Get Team Performance (PM)

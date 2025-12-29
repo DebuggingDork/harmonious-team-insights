@@ -28,23 +28,47 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
+  // Debug logging (remove in production)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('ProtectedRoute check:', {
+      isAuthenticated,
+      userRole: user?.role,
+      requiredRole,
+      hasRequiredRole: requiredRole ? hasRole(requiredRole) : true,
+    });
+  }
+
   // Redirect to login if not authenticated
-  if (!isAuthenticated) {
-    return <Navigate to={redirectTo} replace />;
+  if (!isAuthenticated || !user) {
+    return <Navigate to={redirectTo} replace state={{ from: window.location.pathname }} />;
   }
 
   // Check role-based access if required
-  if (requiredRole && !hasRole(requiredRole)) {
-    // Redirect to appropriate dashboard based on user role
-    const roleDashboardMap: Record<UserRole, string> = {
-      admin: '/dashboard/admin',
-      project_manager: '/dashboard/project-manager',
-      team_lead: '/dashboard/team-lead',
-      employee: '/dashboard/member',
-    };
+  if (requiredRole) {
+    const userHasRole = hasRole(requiredRole);
+    
+    if (!userHasRole) {
+      // Redirect to appropriate dashboard based on user role
+      const roleDashboardMap: Record<UserRole, string> = {
+        admin: '/dashboard/admin',
+        project_manager: '/dashboard/project-manager',
+        team_lead: '/dashboard/team-lead',
+        employee: '/dashboard/member',
+      };
 
-    const userDashboard = user?.role ? roleDashboardMap[user.role] : '/dashboard/member';
-    return <Navigate to={userDashboard} replace />;
+      const userDashboard = user?.role ? roleDashboardMap[user.role] : '/dashboard/member';
+      
+      // Debug logging
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Role mismatch - redirecting:', {
+          userRole: user.role,
+          requiredRole,
+          redirectingTo: userDashboard,
+        });
+      }
+      
+      return <Navigate to={userDashboard} replace state={{ from: window.location.pathname }} />;
+    }
   }
 
   return <>{children}</>;

@@ -7,6 +7,9 @@ import type {
   Project,
   CreateProjectRequest,
   UpdateProjectRequest,
+  DeleteProjectResponse,
+  BulkDeleteProjectsRequest,
+  BulkDeleteProjectsResponse,
   TeamsResponse,
   Team,
   CreateTeamRequest,
@@ -174,6 +177,24 @@ export const getTeamPerformance = async (
 ): Promise<TeamPerformanceResponse> => {
   const url = `${ENDPOINTS.PROJECT_MANAGER.PROJECTS.PERFORMANCE(projectCode, teamCode)}?period_start=${periodStart}&period_end=${periodEnd}`;
   const response = await apiClient.get<TeamPerformanceResponse>(url);
+  return response.data;
+};
+
+/**
+ * Delete a project
+ */
+export const deleteProject = async (code: string): Promise<DeleteProjectResponse> => {
+  const response = await apiClient.delete<DeleteProjectResponse>(ENDPOINTS.PROJECT_MANAGER.PROJECTS.DELETE(code));
+  return response.data;
+};
+
+/**
+ * Bulk delete projects
+ */
+export const bulkDeleteProjects = async (data: BulkDeleteProjectsRequest): Promise<BulkDeleteProjectsResponse> => {
+  const response = await apiClient.delete<BulkDeleteProjectsResponse>(ENDPOINTS.PROJECT_MANAGER.PROJECTS.BULK_DELETE, {
+    data,
+  });
   return response.data;
 };
 

@@ -113,6 +113,29 @@ export interface ProjectsResponse {
   pagination: PaginationResponse;
 }
 
+export interface DeleteProjectResponse {
+  message: string;
+  project_code: string;
+}
+
+export interface BulkDeleteProjectsRequest {
+  project_codes: string[];
+}
+
+export interface BulkDeleteProjectError {
+  project_code: string;
+  error: string;
+}
+
+export interface BulkDeleteProjectsResponse {
+  message: string;
+  deleted: string[];
+  failed: BulkDeleteProjectError[];
+  total_requested: number;
+  total_deleted: number;
+  total_failed: number;
+}
+
 // Team Types
 export interface Team {
   id: string;

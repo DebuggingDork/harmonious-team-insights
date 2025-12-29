@@ -47,11 +47,17 @@ const LoginForm = ({ role, roleTitle, roleIcon, dashboardPath }: LoginFormProps)
 
     try {
       await login(trimmedEmail, trimmedPassword);
+      
+      // Small delay to ensure state is updated before navigation
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       toast({
         title: "Welcome back!",
         description: `Signed in as ${roleTitle}`,
       });
-      navigate(dashboardPath);
+      
+      // Navigate to dashboard (replace to avoid adding to history and prevent hash)
+      navigate(dashboardPath, { replace: true });
     } catch (error) {
       // Error is already handled by handleError in login function
       // But we can add additional handling here if needed

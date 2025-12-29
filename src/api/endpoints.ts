@@ -35,6 +35,8 @@ export const ENDPOINTS = {
       CREATE: `${API_BASE}${API_PREFIX}/project-manager/projects`,
       GET: (code: string) => `${API_BASE}${API_PREFIX}/project-manager/projects/${code}`,
       UPDATE: (code: string) => `${API_BASE}${API_PREFIX}/project-manager/projects/${code}`,
+      DELETE: (code: string) => `${API_BASE}${API_PREFIX}/project-manager/projects/${code}`,
+      BULK_DELETE: `${API_BASE}${API_PREFIX}/project-manager/projects/bulk`,
       TEAMS: (code: string) => `${API_BASE}${API_PREFIX}/project-manager/projects/${code}/teams`,
       MEMBERS: (code: string) => `${API_BASE}${API_PREFIX}/project-manager/projects/${code}/members`,
       HEALTH: (code: string) => `${API_BASE}${API_PREFIX}/project-manager/projects/${code}/health`,

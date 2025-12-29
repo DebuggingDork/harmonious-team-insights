@@ -229,18 +229,18 @@ const TeamLeadDashboard = () => {
         
         <nav className="mt-8 flex-1">
           <div className="space-y-1">
-            <a href="#" className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground bg-accent rounded-lg">
+            <button className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground bg-accent rounded-lg w-full text-left">
               <Users className="h-4 w-4" />
               Team Overview
-            </a>
-            <a href="#" className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors">
+            </button>
+            <button className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors w-full text-left">
               <Activity className="h-4 w-4" />
               Execution Trends
-            </a>
-            <a href="#" className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors">
+            </button>
+            <button className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors w-full text-left">
               <MessageSquare className="h-4 w-4" />
               Feedback
-            </a>
+            </button>
           </div>
         </nav>
 

@@ -8,6 +8,7 @@ import type {
   AssignTeamLeadRequest,
   RemoveTeamLeadRequest,
   AddTeamMembersRequest,
+  BulkDeleteProjectsRequest,
   PerformanceFilters,
 } from '@/api/types';
 import { handleError } from '@/utils/errorHandler';
@@ -245,6 +246,36 @@ export const useTeamPerformance = (projectCode: string, teamCode: string, filter
     queryFn: () => projectManagerService.getTeamPerformance(projectCode, teamCode, filters.period_start, filters.period_end),
     enabled: !!projectCode && !!teamCode && !!filters.period_start && !!filters.period_end,
     staleTime: 60000,
+  });
+};
+
+/**
+ * Delete project mutation
+ */
+export const useDeleteProject = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (code: string) => projectManagerService.deleteProject(code),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: projectManagerKeys.projects.all });
+    },
+    onError: handleError,
+  });
+};
+
+/**
+ * Bulk delete projects mutation
+ */
+export const useBulkDeleteProjects = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: BulkDeleteProjectsRequest) => projectManagerService.bulkDeleteProjects(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: projectManagerKeys.projects.all });
+    },
+    onError: handleError,
   });
 };
 
