@@ -44,49 +44,7 @@ interface Department {
 }
 
 const AdminDepartments = () => {
-  // Mock data - replace with real API calls
-  const [departments, setDepartments] = useState<Department[]>([
-    {
-      id: "1",
-      name: "Engineering",
-      userCount: 45,
-      activeProjects: 12,
-      status: "active",
-      created_at: "2024-01-15"
-    },
-    {
-      id: "2", 
-      name: "Product Management",
-      userCount: 8,
-      activeProjects: 6,
-      status: "active",
-      created_at: "2024-01-20"
-    },
-    {
-      id: "3",
-      name: "Design",
-      userCount: 12,
-      activeProjects: 8,
-      status: "active", 
-      created_at: "2024-02-01"
-    },
-    {
-      id: "4",
-      name: "Marketing",
-      userCount: 6,
-      activeProjects: 3,
-      status: "active",
-      created_at: "2024-02-10"
-    },
-    {
-      id: "5",
-      name: "Legacy Systems",
-      userCount: 2,
-      activeProjects: 0,
-      status: "archived",
-      created_at: "2023-06-15"
-    }
-  ]);
+  const [departments, setDepartments] = useState<Department[]>([]);
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);

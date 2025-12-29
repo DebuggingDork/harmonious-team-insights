@@ -14,10 +14,8 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  TrendingUp,
   FolderKanban,
   UsersRound,
-  GitCommit,
   Building2,
   UserCog,
   Layers,
@@ -39,17 +37,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/contexts/ThemeContext";
 import { usePendingUsers, useAllUsers, useApproveUser, useRejectUser } from "@/hooks/useAdmin";
 import { format } from "date-fns";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-} from "recharts";
 import AdminUsers from "@/components/admin/AdminUsers";
 import AdminRoles from "@/components/admin/AdminRoles";
 import AdminDepartments from "@/components/admin/AdminDepartments";
@@ -99,23 +86,6 @@ const AdminDashboard = () => {
     employee: allUsers.filter(u => u.role === "employee").length,
   };
 
-  // Mock chart data (can be replaced with real git activity data later)
-  const commitActivityData = [
-    { name: "Mon", commits: 45 },
-    { name: "Tue", commits: 52 },
-    { name: "Wed", commits: 78 },
-    { name: "Thu", commits: 61 },
-    { name: "Fri", commits: 89 },
-    { name: "Sat", commits: 34 },
-    { name: "Sun", commits: 28 },
-  ];
-
-  const contributorTrendData = [
-    { name: "Week 1", contributors: 12 },
-    { name: "Week 2", contributors: 15 },
-    { name: "Week 3", contributors: 18 },
-    { name: "Week 4", contributors: 22 },
-  ];
   return (
     <div className="min-h-screen bg-background">
       {/* Sidebar */}
@@ -402,129 +372,6 @@ const AdminDashboard = () => {
                 </div>
               </motion.div>
 
-              {/* Organization Health & Activity Signals */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                {/* Organization Health */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.4 }}
-                  className="bg-card border border-border rounded-xl p-6"
-                >
-                  <h2 className="text-lg font-semibold text-foreground mb-4">Organization Health</h2>
-                  <div className="space-y-4">
-                    {[
-                      { label: "Active Projects", value: "56", trend: "+3 this month", icon: FolderKanban, positive: true },
-                      { label: "Active Teams", value: "23", trend: "+2 this month", icon: UsersRound, positive: true },
-                      { label: "Total Contributors", value: "342", trend: "+18 this month", icon: Users, positive: true },
-                    ].map((metric) => (
-                      <div key={metric.label} className="flex items-center justify-between p-4 bg-accent/50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-primary/10 rounded-lg">
-                            <metric.icon className="h-4 w-4 text-primary" />
-                          </div>
-                          <div>
-                            <p className="text-sm text-muted-foreground">{metric.label}</p>
-                            <p className="text-xl font-bold text-foreground">{metric.value}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1 text-emerald-500">
-                          <TrendingUp className="h-4 w-4" />
-                          <span className="text-xs">{metric.trend}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-
-                {/* Commit Activity Chart */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.5 }}
-                  className="bg-card border border-border rounded-xl p-6"
-                >
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                      <GitCommit className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <h2 className="text-lg font-semibold text-foreground">Commit Activity</h2>
-                      <p className="text-sm text-muted-foreground">Last 7 days</p>
-                    </div>
-                  </div>
-                  <div className="h-48">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={commitActivityData}>
-                        <defs>
-                          <linearGradient id="commitGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                        <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "hsl(var(--card))",
-                            border: "1px solid hsl(var(--border))",
-                            borderRadius: "8px",
-                          }}
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="commits"
-                          stroke="hsl(var(--primary))"
-                          fillOpacity={1}
-                          fill="url(#commitGradient)"
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                </motion.div>
-              </div>
-
-              {/* Contributor Trend Chart */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.6 }}
-                className="bg-card border border-border rounded-xl p-6 mb-8"
-              >
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Users className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-foreground">Active Contributors Trend</h2>
-                    <p className="text-sm text-muted-foreground">Weekly growth</p>
-                  </div>
-                </div>
-                <div className="h-48">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={contributorTrendData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                      <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "hsl(var(--card))",
-                          border: "1px solid hsl(var(--border))",
-                          borderRadius: "8px",
-                        }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="contributors"
-                        stroke="hsl(var(--primary))"
-                        strokeWidth={2}
-                        dot={{ fill: "hsl(var(--primary))", strokeWidth: 2 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </motion.div>
 
               {/* Administrative Controls */}
               <motion.div

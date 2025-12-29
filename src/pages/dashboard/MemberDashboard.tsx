@@ -163,7 +163,7 @@ const MemberDashboard = () => {
     
     return Array.from({ length: weeks }, (_, i) => ({
       week: `W${i + 1}`,
-      hours: avgHoursPerWeek + Math.floor(Math.random() * 5 - 2), // Add some variation
+      hours: avgHoursPerWeek,
     }));
   }, [metrics]);
 
