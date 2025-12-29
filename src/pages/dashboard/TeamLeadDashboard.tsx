@@ -19,6 +19,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import TeamTuneLogo from "@/components/TeamTuneLogo";
 import {
   ChartContainer,
@@ -86,8 +92,11 @@ const TeamLeadDashboard = () => {
   const { user, logout } = useAuth();
   const [feedbackText, setFeedbackText] = useState("");
   const [selectedMemberCode, setSelectedMemberCode] = useState<string>("");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   // Get teams for the current user (team lead)
+  // Note: Team leads are employees, so we use the employee teams endpoint
+  // This endpoint returns teams where the user is a team lead or member
   const { data: teamsData, isLoading: isLoadingTeams } = useMyTeams();
   
   // Get the first team code (assuming team lead has at least one team)
@@ -262,7 +271,10 @@ const TeamLeadDashboard = () => {
         <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="lg:hidden">
+              <div 
+                className="lg:hidden cursor-pointer"
+                onClick={() => setIsMobileMenuOpen(true)}
+              >
                 <TeamTuneLogo showText={false} />
               </div>
               <div className="relative">
@@ -582,6 +594,48 @@ const TeamLeadDashboard = () => {
           </motion.div>
         </div>
       </main>
+
+      {/* Mobile Sidebar */}
+      <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+        <SheetContent side="left" className="w-64 p-0">
+          <SheetHeader className="p-6 border-b border-border">
+            <SheetTitle className="text-left">
+              <Link to="/" onClick={() => setIsMobileMenuOpen(false)}>
+                <TeamTuneLogo />
+              </Link>
+            </SheetTitle>
+          </SheetHeader>
+          <nav className="flex-1 p-6">
+            <div className="space-y-1">
+              <button className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground bg-accent rounded-lg w-full text-left">
+                <Users className="h-4 w-4" />
+                Team Overview
+              </button>
+              <button className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors w-full text-left">
+                <Activity className="h-4 w-4" />
+                Execution Trends
+              </button>
+              <button className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors w-full text-left">
+                <MessageSquare className="h-4 w-4" />
+                Feedback
+              </button>
+            </div>
+          </nav>
+          <div className="border-t border-border p-6">
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start gap-2 text-muted-foreground"
+              onClick={async () => {
+                await handleLogout();
+                setIsMobileMenuOpen(false);
+              }}
+            >
+              <LogOut className="h-4 w-4" />
+              Sign out
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };

@@ -28,6 +28,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import TeamTuneLogo from "@/components/TeamTuneLogo";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -59,6 +65,7 @@ const AdminDashboard = () => {
   const rejectUserMutation = useRejectUser();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -195,7 +202,10 @@ const AdminDashboard = () => {
         <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="lg:hidden">
+              <div 
+                className="lg:hidden cursor-pointer"
+                onClick={() => setIsMobileMenuOpen(true)}
+              >
                 <TeamTuneLogo showText={false} />
               </div>
               <div className="relative">
@@ -573,6 +583,106 @@ const AdminDashboard = () => {
           onClose={() => setIsNotificationPanelOpen(false)} 
         />
       </main>
+
+      {/* Mobile Sidebar */}
+      <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+        <SheetContent side="left" className="w-64 p-0">
+          <SheetHeader className="p-6 border-b border-border">
+            <SheetTitle className="text-left">
+              <Link to="/" onClick={() => setIsMobileMenuOpen(false)}>
+                <TeamTuneLogo />
+              </Link>
+            </SheetTitle>
+          </SheetHeader>
+          <nav className="flex-1 p-6">
+            <div className="space-y-1">
+              <button 
+                onClick={() => {
+                  setActiveTab("dashboard");
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg w-full text-left transition-colors ${
+                  activeTab === "dashboard" 
+                    ? "text-foreground bg-accent" 
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                }`}
+              >
+                <BarChart3 className="h-4 w-4" />
+                Dashboard
+              </button>
+              <button 
+                onClick={() => {
+                  setActiveTab("users");
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors ${
+                  activeTab === "users" 
+                    ? "font-medium text-foreground bg-accent" 
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                }`}
+              >
+                <Users className="h-4 w-4" />
+                Users
+              </button>
+              <button 
+                onClick={() => {
+                  setActiveTab("roles");
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors ${
+                  activeTab === "roles" 
+                    ? "font-medium text-foreground bg-accent" 
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                }`}
+              >
+                <UserCog className="h-4 w-4" />
+                Roles
+              </button>
+              <button 
+                onClick={() => {
+                  setActiveTab("departments");
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors ${
+                  activeTab === "departments" 
+                    ? "font-medium text-foreground bg-accent" 
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                }`}
+              >
+                <Building2 className="h-4 w-4" />
+                Departments
+              </button>
+              <button 
+                onClick={() => {
+                  setActiveTab("settings");
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors ${
+                  activeTab === "settings" 
+                    ? "font-medium text-foreground bg-accent" 
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                }`}
+              >
+                <Settings className="h-4 w-4" />
+                Settings
+              </button>
+            </div>
+          </nav>
+          <div className="border-t border-border p-6">
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start gap-2 text-muted-foreground"
+              onClick={async () => {
+                await handleLogout();
+                setIsMobileMenuOpen(false);
+              }}
+            >
+              <LogOut className="h-4 w-4" />
+              Sign out
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };

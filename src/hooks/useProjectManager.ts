@@ -105,6 +105,23 @@ export const useUpdateProject = () => {
 };
 
 /**
+ * Update project status mutation
+ */
+export const useUpdateProjectStatus = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ code, status, reason }: { code: string; status: string; reason?: string }) =>
+      projectManagerService.updateProjectStatus(code, status, reason),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: projectManagerKeys.projects.detail(variables.code) });
+      queryClient.invalidateQueries({ queryKey: projectManagerKeys.projects.all });
+    },
+    onError: handleError,
+  });
+};
+
+/**
  * Get project teams
  */
 export const useProjectTeams = (code: string, params?: PaginationParams) => {

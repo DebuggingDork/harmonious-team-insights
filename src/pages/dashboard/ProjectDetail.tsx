@@ -67,6 +67,7 @@ import {
   useAddTeamMembers,
   useRemoveTeamMember,
   useUpdateProject,
+  useUpdateProjectStatus,
   useDeleteProject,
 } from "@/hooks/useProjectManager";
 import { useEmployees } from "@/hooks/useProjectManager";
@@ -83,7 +84,7 @@ import type {
 const ProjectDetail = () => {
   const { projectCode } = useParams<{ projectCode: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, updateUserRole } = useAuth();
 
   // Fetch project data
   const { data: project, isLoading: isLoadingProject } = useProject(projectCode || "");
@@ -91,6 +92,9 @@ const ProjectDetail = () => {
   const { data: healthData, isLoading: isLoadingHealth } = useProjectHealth(projectCode || "");
   const { data: projectMembersData, isLoading: isLoadingMembers } = useProjectMembers(projectCode || "");
   const { data: employeesData } = useEmployees();
+  
+  // Get current team members for the selected team (to exclude from member selection)
+  const { data: selectedTeamMembersData } = useTeamMembers(selectedTeamCode || "");
 
   // Store project ID in state (from fetched project)
   const [projectId, setProjectId] = useState<string | null>(null);
@@ -129,6 +133,7 @@ const ProjectDetail = () => {
   const addMembersMutation = useAddTeamMembers();
   const removeMemberMutation = useRemoveTeamMember();
   const updateProjectMutation = useUpdateProject();
+  const updateProjectStatusMutation = useUpdateProjectStatus();
   const deleteProjectMutation = useDeleteProject();
 
   const teams = teamsData?.teams || [];
@@ -175,6 +180,17 @@ const ProjectDetail = () => {
         code: teamCode,
         data: { lead_id: leadId },
       });
+      
+      // If the assigned lead is the current user, update their role in the UI
+      const assignedEmployee = employees.find((emp: any) => 
+        emp.user_code === leadId || emp.id === leadId
+      );
+      
+      if (assignedEmployee && user && 
+          (assignedEmployee.user_code === user.user_code || assignedEmployee.id === user.id)) {
+        updateUserRole('team_lead');
+      }
+      
       toast({
         title: "Success",
         description: "Team lead assigned successfully",
@@ -364,19 +380,46 @@ const ProjectDetail = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Badge
-              variant={
-                project.status === "active"
-                  ? "default"
-                  : project.status === "completed"
-                  ? "secondary"
-                  : project.status === "on_hold"
-                  ? "destructive"
-                  : "outline"
-              }
+            <Select
+              value={project.status}
+              onValueChange={(value: string) => {
+                if (projectCode) {
+                  updateProjectStatusMutation.mutate(
+                    {
+                      code: projectCode,
+                      status: value,
+                    },
+                    {
+                      onSuccess: () => {
+                        toast({
+                          title: "Success",
+                          description: "Project status updated successfully",
+                        });
+                      },
+                      onError: () => {
+                        toast({
+                          title: "Error",
+                          description: "Failed to update project status",
+                          variant: "destructive",
+                        });
+                      },
+                    }
+                  );
+                }
+              }}
+              disabled={updateProjectStatusMutation.isPending}
             >
-              {project.status}
-            </Badge>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="planning">Planning</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="on_hold">On Hold</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
             <Button
               variant="outline"
               size="sm"
@@ -895,8 +938,11 @@ const ProjectDetail = () => {
             <Button variant="outline" onClick={() => setIsEditProjectOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleUpdateProject} disabled={updateProjectMutation.isPending}>
-              {updateProjectMutation.isPending ? (
+            <Button 
+              onClick={handleUpdateProject} 
+              disabled={updateProjectMutation.isPending || updateProjectStatusMutation.isPending}
+            >
+              {updateProjectMutation.isPending || updateProjectStatusMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   Updating...
@@ -922,9 +968,31 @@ const ProjectDetail = () => {
             <div className="grid gap-2">
               <Label>Select Members</Label>
               <div className="max-h-60 overflow-y-auto space-y-2 border rounded-lg p-2">
-                {employees
-                  .filter((emp: any) => emp.role === "employee")
-                  .map((emp: any) => (
+                {(() => {
+                  // Get current team member IDs to exclude them
+                  const currentMemberIds = selectedTeamMembersData?.members?.map((m: any) => m.user_id) || [];
+                  const currentMemberCodes = selectedTeamMembersData?.members?.map((m: any) => m.user_code) || [];
+                  
+                  return employees
+                    .filter((emp: any) => {
+                      // Filter by role
+                      if (emp.role !== "employee") return false;
+                      
+                      // Exclude team lead (check both id and user_code to be safe)
+                      if (selectedTeam?.lead_id && 
+                          (emp.id === selectedTeam.lead_id || emp.user_code === selectedTeam.lead_id)) {
+                        return false;
+                      }
+                      
+                      // Exclude already existing team members
+                      if (currentMemberIds.includes(emp.id) || currentMemberIds.includes(emp.user_code) ||
+                          currentMemberCodes.includes(emp.id) || currentMemberCodes.includes(emp.user_code)) {
+                        return false;
+                      }
+                      
+                      return true;
+                    })
+                    .map((emp: any) => (
                     <label
                       key={emp.id}
                       className="flex items-center gap-2 p-2 hover:bg-accent rounded cursor-pointer"
@@ -950,7 +1018,8 @@ const ProjectDetail = () => {
                         {emp.full_name} ({emp.user_code})
                       </span>
                     </label>
-                  ))}
+                  ));
+                })()}
               </div>
             </div>
             <div className="grid gap-2">

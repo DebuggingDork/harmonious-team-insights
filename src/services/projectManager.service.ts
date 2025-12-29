@@ -77,6 +77,21 @@ export const updateProject = async (code: string, data: UpdateProjectRequest): P
 };
 
 /**
+ * Update project status
+ */
+export const updateProjectStatus = async (
+  code: string,
+  status: string,
+  reason?: string
+): Promise<Project> => {
+  const response = await apiClient.put<Project>(ENDPOINTS.PROJECT_MANAGER.PROJECTS.UPDATE_STATUS(code), {
+    status,
+    reason,
+  });
+  return response.data;
+};
+
+/**
  * Get teams for a project
  */
 export const getProjectTeams = async (code: string, params?: PaginationParams): Promise<TeamsResponse> => {

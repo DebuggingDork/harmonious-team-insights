@@ -12,6 +12,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   hasRole: (role: string) => boolean;
+  updateUserRole: (newRole: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -127,6 +128,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return matches;
   };
 
+  const updateUserRole = (newRole: string): void => {
+    if (!user) return;
+    
+    const updatedUser = { ...user, role: newRole as User['role'] };
+    setUserState(updatedUser);
+    
+    // Update in localStorage if user data is persisted
+    const storedUser = getUser<User>();
+    if (storedUser) {
+      const updatedStoredUser = { ...storedUser, role: newRole as User['role'] };
+      setUser(updatedStoredUser);
+    }
+  };
+
   const value: AuthContextType = {
     user,
     isLoading,
@@ -134,6 +149,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     login,
     logout,
     hasRole,
+    updateUserRole,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
