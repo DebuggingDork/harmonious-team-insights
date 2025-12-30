@@ -5,45 +5,175 @@ import type {
   UpdateTaskRequest,
   UpdateTaskStatusRequest,
   AssignTaskRequest,
-  TaskFilters,
   CreateObservationRequest,
   UpdateObservationRequest,
+  TaskFilters,
   PerformanceFilters,
   GitActivityFilters,
   LinkRepositoryRequest,
+  CreateSprintRequest,
+  CreateCapacityPlanRequest,
+  SkillGapAnalysisRequest,
+  CreateGoalRequest,
+  CreateFeedbackRequest,
+  CreateAnnouncementRequest,
+  CreateOneOnOneRequest,
+  CreateDecisionRequest,
+  CreateMonitoringRuleRequest,
+  AcknowledgeAlertRequest,
+  ResolveAlertRequest,
+  CreateRiskRequest,
+  CreateFlagRequest,
+  CreateTaskTemplateRequest,
 } from '@/api/types';
 import { handleError } from '@/utils/errorHandler';
 
-// Query Keys
+// ============================================================================
+// QUERY KEYS
+// ============================================================================
+
 export const teamLeadKeys = {
   all: ['team-lead'] as const,
+
+  // Team Management
+  myTeams: () => ['team-lead', 'my-teams'] as const,
+  teamInfo: (teamCode: string) => ['team-lead', 'team-info', teamCode] as const,
+
+  // Dashboard
+  dashboard: (teamCode: string) => ['team-lead', 'dashboard', teamCode] as const,
+
+  // Sprints
+  sprints: {
+    all: ['team-lead', 'sprints'] as const,
+    dashboard: (sprintCode: string) => ['team-lead', 'sprints', 'dashboard', sprintCode] as const,
+  },
+
+  // Tasks
   tasks: {
     all: ['team-lead', 'tasks'] as const,
     list: (teamCode: string, filters?: TaskFilters) => ['team-lead', 'tasks', teamCode, filters] as const,
     detail: (taskCode: string) => ['team-lead', 'tasks', taskCode] as const,
   },
+
+  // Workload
+  workload: (teamCode: string) => ['team-lead', 'workload', teamCode] as const,
+
+  // Observations
   observations: {
     all: ['team-lead', 'observations'] as const,
     list: (teamCode: string, userCode: string, params?: { page?: number; limit?: number }) =>
       ['team-lead', 'observations', teamCode, userCode, params] as const,
     detail: (observationCode: string) => ['team-lead', 'observations', observationCode] as const,
   },
+
+  // Performance
   performance: {
     team: (teamCode: string, filters: PerformanceFilters) =>
       ['team-lead', 'performance', 'team', teamCode, filters] as const,
-    member: (teamCode: string, userCode: string, filters: PerformanceFilters) =>
-      ['team-lead', 'performance', 'member', teamCode, userCode, filters] as const,
+    member: (userCode: string, period?: string) =>
+      ['team-lead', 'performance', 'member', userCode, period] as const,
   },
+
+  // Metrics
   metrics: {
-    team: (teamCode: string) => ['team-lead', 'metrics', 'team', teamCode] as const,
+    team: (teamCode: string) => ['team-lead', 'metrics', teamCode] as const,
   },
+
+  // Git Activity
   git: {
     activity: (teamCode: string, filters: GitActivityFilters) =>
       ['team-lead', 'git', 'activity', teamCode, filters] as const,
     memberActivity: (teamCode: string, userCode: string, filters: GitActivityFilters) =>
-      ['team-lead', 'git', 'activity', teamCode, userCode, filters] as const,
+      ['team-lead', 'git', 'member-activity', teamCode, userCode, filters] as const,
   },
+
+  // Alerts
+  alerts: (teamCode: string, days?: number) => ['team-lead', 'alerts', teamCode, days] as const,
+
+  // Risks
+  risks: (teamCode: string) => ['team-lead', 'risks', teamCode] as const,
+
+  // Flags
+  flags: (teamCode: string) => ['team-lead', 'flags', teamCode] as const,
 };
+
+// ============================================================================
+// TEAM MANAGEMENT HOOKS
+// ============================================================================
+
+/**
+ * Get all teams managed by the authenticated team lead
+ */
+export const useMyTeams = (enabled: boolean = true) => {
+  return useQuery({
+    queryKey: teamLeadKeys.myTeams(),
+    queryFn: () => teamLeadService.getMyTeams(),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled,
+  });
+};
+
+/**
+ * Get specific team information by team code
+ */
+export const useTeamInfo = (teamCode: string) => {
+  return useQuery({
+    queryKey: teamLeadKeys.teamInfo(teamCode),
+    queryFn: () => teamLeadService.getTeamInfo(teamCode),
+    enabled: !!teamCode,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+// ============================================================================
+// DASHBOARD HOOKS
+// ============================================================================
+
+/**
+ * Get complete team dashboard
+ */
+export const useTeamDashboard = (teamCode: string) => {
+  return useQuery({
+    queryKey: teamLeadKeys.dashboard(teamCode),
+    queryFn: () => teamLeadService.getTeamDashboard(teamCode),
+    enabled: !!teamCode,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+// ============================================================================
+// SPRINT MANAGEMENT HOOKS
+// ============================================================================
+
+/**
+ * Create sprint mutation
+ */
+export const useCreateSprint = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateSprintRequest) => teamLeadService.createSprint(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: teamLeadKeys.sprints.all });
+    },
+    onError: handleError,
+  });
+};
+
+/**
+ * Get sprint dashboard
+ */
+export const useSprintDashboard = (sprintCode: string) => {
+  return useQuery({
+    queryKey: teamLeadKeys.sprints.dashboard(sprintCode),
+    queryFn: () => teamLeadService.getSprintDashboard(sprintCode),
+    enabled: !!sprintCode,
+  });
+};
+
+// ============================================================================
+// TASK MANAGEMENT HOOKS
+// ============================================================================
 
 /**
  * Get team tasks
@@ -53,7 +183,6 @@ export const useTeamTasks = (teamCode: string, filters?: TaskFilters) => {
     queryKey: teamLeadKeys.tasks.list(teamCode, filters),
     queryFn: () => teamLeadService.getTeamTasks(teamCode, filters),
     enabled: !!teamCode,
-    staleTime: 30000,
   });
 };
 
@@ -65,7 +194,6 @@ export const useTask = (taskCode: string) => {
     queryKey: teamLeadKeys.tasks.detail(taskCode),
     queryFn: () => teamLeadService.getTask(taskCode),
     enabled: !!taskCode,
-    staleTime: 30000,
   });
 };
 
@@ -151,6 +279,108 @@ export const useUpdateTaskStatus = () => {
   });
 };
 
+// ============================================================================
+// WORKLOAD & RESOURCE MANAGEMENT HOOKS
+// ============================================================================
+
+/**
+ * Get team workload
+ */
+export const useTeamWorkload = (teamCode: string) => {
+  return useQuery({
+    queryKey: teamLeadKeys.workload(teamCode),
+    queryFn: () => teamLeadService.getTeamWorkload(teamCode),
+    enabled: !!teamCode,
+  });
+};
+
+/**
+ * Create capacity plan mutation
+ */
+export const useCreateCapacityPlan = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ teamCode, data }: { teamCode: string; data: CreateCapacityPlanRequest }) =>
+      teamLeadService.createCapacityPlan(teamCode, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: teamLeadKeys.workload(variables.teamCode) });
+    },
+    onError: handleError,
+  });
+};
+
+/**
+ * Perform skill gap analysis mutation
+ */
+export const useSkillGapAnalysis = () => {
+  return useMutation({
+    mutationFn: ({ teamCode, data }: { teamCode: string; data: SkillGapAnalysisRequest }) =>
+      teamLeadService.performSkillGapAnalysis(teamCode, data),
+    onError: handleError,
+  });
+};
+
+// ============================================================================
+// PERFORMANCE MANAGEMENT HOOKS
+// ============================================================================
+
+/**
+ * Get member performance dashboard
+ */
+export const useMemberPerformanceDashboard = (
+  userCode: string,
+  period?: 'current_week' | 'current_month' | 'current_quarter'
+) => {
+  return useQuery({
+    queryKey: teamLeadKeys.performance.member(userCode, period),
+    queryFn: () => teamLeadService.getMemberPerformanceDashboard(userCode, period),
+    enabled: !!userCode,
+  });
+};
+
+/**
+ * Create performance goal mutation
+ */
+export const useCreatePerformanceGoal = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ userCode, data }: { userCode: string; data: CreateGoalRequest }) =>
+      teamLeadService.createPerformanceGoal(userCode, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: teamLeadKeys.performance.member(variables.userCode) });
+    },
+    onError: handleError,
+  });
+};
+
+/**
+ * Create feedback request mutation
+ */
+export const useCreateFeedbackRequest = () => {
+  return useMutation({
+    mutationFn: ({ userCode, data }: { userCode: string; data: CreateFeedbackRequest }) =>
+      teamLeadService.createFeedbackRequest(userCode, data),
+    onError: handleError,
+  });
+};
+
+/**
+ * Get team performance
+ */
+export const useTeamPerformance = (teamCode: string, filters: PerformanceFilters) => {
+  return useQuery({
+    queryKey: teamLeadKeys.performance.team(teamCode, filters),
+    queryFn: () => teamLeadService.getTeamPerformance(teamCode, filters),
+    enabled: !!teamCode && !!filters.period_start && !!filters.period_end,
+  });
+};
+
+// ============================================================================
+// OBSERVATION HOOKS
+// ============================================================================
+
 /**
  * Create observation mutation
  */
@@ -171,7 +401,7 @@ export const useCreateObservation = () => {
       queryClient.invalidateQueries({
         queryKey: teamLeadKeys.observations.list(variables.teamCode, variables.userCode),
       });
-      queryClient.invalidateQueries({ queryKey: teamLeadKeys.performance.all });
+      queryClient.invalidateQueries({ queryKey: teamLeadKeys.performance.member(variables.userCode) });
     },
     onError: handleError,
   });
@@ -189,7 +419,6 @@ export const useMemberObservations = (
     queryKey: teamLeadKeys.observations.list(teamCode, userCode, params),
     queryFn: () => teamLeadService.getMemberObservations(teamCode, userCode, params),
     enabled: !!teamCode && !!userCode,
-    staleTime: 30000,
   });
 };
 
@@ -201,7 +430,6 @@ export const useObservation = (observationCode: string) => {
     queryKey: teamLeadKeys.observations.detail(observationCode),
     queryFn: () => teamLeadService.getObservation(observationCode),
     enabled: !!observationCode,
-    staleTime: 30000,
   });
 };
 
@@ -237,29 +465,184 @@ export const useDeleteObservation = () => {
   });
 };
 
+// ============================================================================
+// COMMUNICATION HOOKS
+// ============================================================================
+
 /**
- * Get team performance
+ * Create announcement mutation
  */
-export const useTeamPerformance = (teamCode: string, filters: PerformanceFilters) => {
-  return useQuery({
-    queryKey: teamLeadKeys.performance.team(teamCode, filters),
-    queryFn: () => teamLeadService.getTeamPerformance(teamCode, filters),
-    enabled: !!teamCode && !!filters.period_start && !!filters.period_end,
-    staleTime: 60000,
+export const useCreateAnnouncement = () => {
+  return useMutation({
+    mutationFn: ({ teamCode, data }: { teamCode: string; data: CreateAnnouncementRequest }) =>
+      teamLeadService.createAnnouncement(teamCode, data),
+    onError: handleError,
   });
 };
 
 /**
- * Get member performance
+ * Schedule one-on-one mutation
  */
-export const useMemberPerformance = (teamCode: string, userCode: string, filters: PerformanceFilters) => {
-  return useQuery({
-    queryKey: teamLeadKeys.performance.member(teamCode, userCode, filters),
-    queryFn: () => teamLeadService.getMemberPerformance(teamCode, userCode, filters),
-    enabled: !!teamCode && !!userCode && !!filters.period_start && !!filters.period_end,
-    staleTime: 60000,
+export const useScheduleOneOnOne = () => {
+  return useMutation({
+    mutationFn: ({ userCode, data }: { userCode: string; data: CreateOneOnOneRequest }) =>
+      teamLeadService.scheduleOneOnOne(userCode, data),
+    onError: handleError,
   });
 };
+
+/**
+ * Log team decision mutation
+ */
+export const useLogTeamDecision = () => {
+  return useMutation({
+    mutationFn: ({ teamCode, data }: { teamCode: string; data: CreateDecisionRequest }) =>
+      teamLeadService.logTeamDecision(teamCode, data),
+    onError: handleError,
+  });
+};
+
+// ============================================================================
+// MONITORING & ALERTS HOOKS
+// ============================================================================
+
+/**
+ * Create monitoring rule mutation
+ */
+export const useCreateMonitoringRule = () => {
+  return useMutation({
+    mutationFn: ({ teamCode, data }: { teamCode: string; data: CreateMonitoringRuleRequest }) =>
+      teamLeadService.createMonitoringRule(teamCode, data),
+    onError: handleError,
+  });
+};
+
+/**
+ * Get recent alerts
+ */
+export const useRecentAlerts = (teamCode: string, days: number = 7) => {
+  return useQuery({
+    queryKey: teamLeadKeys.alerts(teamCode, days),
+    queryFn: () => teamLeadService.getRecentAlerts(teamCode, days),
+    enabled: !!teamCode,
+    refetchInterval: 1000 * 60 * 2, // Refetch every 2 minutes
+  });
+};
+
+/**
+ * Acknowledge alert mutation
+ */
+export const useAcknowledgeAlert = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ alertCode, data }: { alertCode: string; data?: AcknowledgeAlertRequest }) =>
+      teamLeadService.acknowledgeAlert(alertCode, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: teamLeadKeys.all });
+    },
+    onError: handleError,
+  });
+};
+
+/**
+ * Resolve alert mutation
+ */
+export const useResolveAlert = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ alertCode, data }: { alertCode: string; data: ResolveAlertRequest }) =>
+      teamLeadService.resolveAlert(alertCode, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: teamLeadKeys.all });
+    },
+    onError: handleError,
+  });
+};
+
+// ============================================================================
+// RISK MANAGEMENT HOOKS
+// ============================================================================
+
+/**
+ * Create risk mutation
+ */
+export const useCreateRisk = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ teamCode, data }: { teamCode: string; data: CreateRiskRequest }) =>
+      teamLeadService.createRisk(teamCode, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: teamLeadKeys.risks(variables.teamCode) });
+      queryClient.invalidateQueries({ queryKey: teamLeadKeys.dashboard(variables.teamCode) });
+    },
+    onError: handleError,
+  });
+};
+
+/**
+ * Get active risks
+ */
+export const useActiveRisks = (teamCode: string) => {
+  return useQuery({
+    queryKey: teamLeadKeys.risks(teamCode),
+    queryFn: () => teamLeadService.getActiveRisks(teamCode),
+    enabled: !!teamCode,
+  });
+};
+
+// ============================================================================
+// PERFORMANCE FLAGS HOOKS
+// ============================================================================
+
+/**
+ * Flag performance issue mutation
+ */
+export const useFlagPerformanceIssue = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ userCode, data }: { userCode: string; data: CreateFlagRequest }) =>
+      teamLeadService.flagPerformanceIssue(userCode, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: teamLeadKeys.performance.member(variables.userCode) });
+      queryClient.invalidateQueries({ queryKey: teamLeadKeys.flags });
+    },
+    onError: handleError,
+  });
+};
+
+/**
+ * Get active flags
+ */
+export const useActiveFlags = (teamCode: string) => {
+  return useQuery({
+    queryKey: teamLeadKeys.flags(teamCode),
+    queryFn: () => teamLeadService.getActiveFlags(teamCode),
+    enabled: !!teamCode,
+  });
+};
+
+// ============================================================================
+// TASK TEMPLATES HOOKS
+// ============================================================================
+
+/**
+ * Create task template mutation
+ */
+export const useCreateTaskTemplate = () => {
+  return useMutation({
+    mutationFn: ({ teamCode, data }: { teamCode: string; data: CreateTaskTemplateRequest }) =>
+      teamLeadService.createTaskTemplate(teamCode, data),
+    onError: handleError,
+  });
+};
+
+// ============================================================================
+// METRICS & GIT ACTIVITY HOOKS
+// ============================================================================
 
 /**
  * Get team metrics
@@ -269,7 +652,6 @@ export const useTeamMetrics = (teamCode: string) => {
     queryKey: teamLeadKeys.metrics.team(teamCode),
     queryFn: () => teamLeadService.getTeamMetrics(teamCode),
     enabled: !!teamCode,
-    staleTime: 60000,
   });
 };
 
@@ -297,7 +679,6 @@ export const useTeamGitActivity = (teamCode: string, filters: GitActivityFilters
     queryKey: teamLeadKeys.git.activity(teamCode, filters),
     queryFn: () => teamLeadService.getTeamGitActivity(teamCode, filters),
     enabled: !!teamCode && !!filters.start_date && !!filters.end_date,
-    staleTime: 60000,
   });
 };
 
@@ -309,7 +690,5 @@ export const useMemberGitActivity = (teamCode: string, userCode: string, filters
     queryKey: teamLeadKeys.git.memberActivity(teamCode, userCode, filters),
     queryFn: () => teamLeadService.getMemberGitActivity(teamCode, userCode, filters),
     enabled: !!teamCode && !!userCode && !!filters.start_date && !!filters.end_date,
-    staleTime: 60000,
   });
 };
-

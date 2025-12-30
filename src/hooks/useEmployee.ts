@@ -194,6 +194,8 @@ export const useUpdateMyProfile = () => {
 
 /**
  * Get my teams
+ * NOTE: This hook calls /api/employee/teams and should ONLY be used by employees.
+ * Admin dashboard and other roles should NOT use this hook.
  */
 export const useMyTeams = (params?: { page?: number; limit?: number }, enabled: boolean = true) => {
   return useQuery({

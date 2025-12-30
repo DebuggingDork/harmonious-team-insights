@@ -58,9 +58,65 @@ const LoginForm = ({ role, roleTitle, roleIcon, dashboardPath }: LoginFormProps)
       
       // Navigate to dashboard (replace to avoid adding to history and prevent hash)
       navigate(dashboardPath, { replace: true });
-    } catch (error) {
-      // Error is already handled by handleError in login function
-      // But we can add additional handling here if needed
+    } catch (error: any) {
+      // Extract error message from various possible structures
+      // API format: { error: { message: "Account disabled", code: "UNAUTHORIZED" } }
+      // After API client transformation: { message: "Account disabled", status: 401 }
+      let errorMessage = '';
+      
+      // Debug: Log error structure in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Login error structure:', {
+          error,
+          errorMessage: error?.message,
+          errorError: error?.error,
+          responseData: error?.response?.data,
+        });
+      }
+      
+      // Check all possible error structures (in order of likelihood)
+      if (error?.message) {
+        // Transformed ApiError message (most common after API client processing)
+        errorMessage = error.message;
+      } else if (error?.error?.message) {
+        // Direct error.error.message structure
+        errorMessage = error.error.message;
+      } else if (error?.response?.data?.error?.message) {
+        // Axios response with nested error
+        errorMessage = error.response.data.error.message;
+      } else if (error?.response?.data?.message) {
+        // Direct response message
+        errorMessage = error.response.data.message;
+      }
+      
+      const lowerErrorMessage = errorMessage.toLowerCase();
+      
+      // Check if the error is about blocked/disabled account
+      // Check message content and error codes
+      const isBlockedAccount = 
+        lowerErrorMessage.includes('blocked') || 
+        lowerErrorMessage.includes('account has been blocked') ||
+        lowerErrorMessage.includes('account disabled') ||
+        lowerErrorMessage.includes('disabled') ||
+        (error?.error?.code === 'UNAUTHORIZED' && lowerErrorMessage.includes('disabled')) ||
+        (error?.status === 401 && lowerErrorMessage.includes('disabled'));
+      
+      if (isBlockedAccount) {
+        toast({
+          title: "Account Blocked",
+          description: "Your account has been blocked. Please contact your administrator for assistance.",
+          variant: "destructive",
+          duration: 8000,
+        });
+      } else {
+        // For other errors, show the actual error message or a generic one
+        toast({
+          title: "Login Failed",
+          description: errorMessage || "Please check your credentials and try again.",
+          variant: "destructive",
+          duration: 5000,
+        });
+      }
     } finally {
       setIsLoading(false);
     }

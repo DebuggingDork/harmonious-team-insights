@@ -42,37 +42,58 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import TeamTuneLogo from "@/components/TeamTuneLogo";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/contexts/ThemeContext";
-import { usePendingUsers, useAllUsers, useApproveUser, useRejectUser } from "@/hooks/useAdmin";
+import { usePendingUsers, useAllUsers, useApproveUser, useRejectUser, useUnblockUser } from "@/hooks/useAdmin";
 import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
 import AdminUsers from "@/components/admin/AdminUsers";
 import AdminRoles from "@/components/admin/AdminRoles";
 import AdminDepartments from "@/components/admin/AdminDepartments";
 import AdminSettings from "@/components/admin/AdminSettings";
 import NotificationPanel from "@/components/admin/NotificationPanel";
+import type { UserRole } from "@/api/types";
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { data: pendingUsers = [], isLoading: isLoadingPending } = usePendingUsers();
   const { data: allUsers = [], isLoading: isLoadingAll } = useAllUsers();
   const approveUserMutation = useApproveUser();
   const rejectUserMutation = useRejectUser();
+  const unblockUserMutation = useUnblockUser();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  // Track selected role for each pending user
+  const [userRoles, setUserRoles] = useState<Record<string, UserRole>>({});
 
   const handleLogout = async () => {
     await logout();
   };
 
+  const handleRoleChange = (userId: string, role: UserRole) => {
+    setUserRoles((prev) => ({
+      ...prev,
+      [userId]: role,
+    }));
+  };
+
   const handleApprove = async (id: string) => {
+    const selectedRole = userRoles[id] || "employee"; // Default to "employee"
     approveUserMutation.mutate({
       id,
-      data: { role: "employee" },
+      data: { role: selectedRole },
     });
   };
 
@@ -83,11 +104,24 @@ const AdminDashboard = () => {
     });
   };
 
+  const handleUnblock = async (id: string) => {
+    const userToUnblock = blockedUsersList.find(u => u.id === id);
+    unblockUserMutation.mutate(id, {
+      onSuccess: () => {
+        toast({
+          title: "User Unblocked",
+          description: `${userToUnblock?.full_name || 'User'} has been unblocked successfully`,
+        });
+      },
+    });
+  };
+
   // Calculate stats from real data
   const totalUsers = allUsers.length;
   const activeUsers = allUsers.filter(u => u.status === "active").length;
   const blockedUsers = allUsers.filter(u => u.status === "blocked").length;
   const pendingCount = pendingUsers.length;
+  const blockedUsersList = allUsers.filter(u => u.status === "blocked");
 
   // Role distribution
   const roleDistribution = {
@@ -376,7 +410,21 @@ const AdminDashboard = () => {
                           <span className="text-xs text-muted-foreground hidden sm:block">
                             Requested {pendingUser.created_at ? format(new Date(pendingUser.created_at), "MMM d, yyyy") : "N/A"}
                           </span>
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 items-center">
+                            <Select
+                              value={userRoles[pendingUser.id] || "employee"}
+                              onValueChange={(value) => handleRoleChange(pendingUser.id, value as UserRole)}
+                            >
+                              <SelectTrigger className="w-[140px] h-8 text-xs">
+                                <SelectValue placeholder="Select role" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="employee">Employee</SelectItem>
+                                <SelectItem value="team_lead">Team Lead</SelectItem>
+                                <SelectItem value="project_manager">Project Manager</SelectItem>
+                                <SelectItem value="admin">Admin</SelectItem>
+                              </SelectContent>
+                            </Select>
                             <Button 
                               size="sm" 
                               variant="outline" 
@@ -404,6 +452,69 @@ const AdminDashboard = () => {
                 </div>
               </motion.div>
 
+              {/* Blocked Users Section */}
+              {blockedUsersList.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                  className="bg-card border-2 border-destructive/50 rounded-xl p-6 mb-8"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-destructive/10 rounded-lg">
+                        <UserX className="h-5 w-5 text-destructive" />
+                      </div>
+                      <div>
+                        <h2 className="text-lg font-semibold text-foreground">Blocked Users</h2>
+                        <p className="text-sm text-muted-foreground">Users who have been blocked from accessing the system</p>
+                      </div>
+                    </div>
+                    <Badge variant="secondary" className="bg-destructive/10 text-destructive border-destructive/20">
+                      {blockedUsersList.length} blocked
+                    </Badge>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {blockedUsersList.map((blockedUser) => (
+                      <div
+                        key={blockedUser.id}
+                        className="flex items-center justify-between p-4 bg-accent/50 rounded-lg"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="h-10 w-10 bg-destructive/10 rounded-full flex items-center justify-center">
+                            <span className="text-sm font-medium text-destructive">
+                              {blockedUser.full_name.split(' ').map(n => n[0]).join('')}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-foreground">{blockedUser.full_name}</p>
+                            <p className="text-xs text-muted-foreground">{blockedUser.email}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Role: <span className="capitalize">{blockedUser.role.replace('_', ' ')}</span>
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs text-muted-foreground hidden sm:block">
+                            {blockedUser.updated_at ? format(new Date(blockedUser.updated_at), "MMM d, yyyy") : "N/A"}
+                          </span>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 border-emerald-200"
+                            onClick={() => handleUnblock(blockedUser.id)}
+                            disabled={unblockUserMutation.isPending}
+                          >
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            Unblock
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
 
               {/* Administrative Controls */}
               <motion.div

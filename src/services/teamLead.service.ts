@@ -1,6 +1,7 @@
 import apiClient from '@/api/client';
 import { ENDPOINTS } from '@/api/endpoints';
 import type {
+  // Existing types
   Task,
   CreateTaskRequest,
   UpdateTaskRequest,
@@ -21,7 +22,111 @@ import type {
   TaskFilters,
   PerformanceFilters,
   GitActivityFilters,
+  // New Team Lead types
+  TeamDashboardResponse,
+  Sprint,
+  CreateSprintRequest,
+  SprintDashboardResponse,
+  TeamWorkloadResponse,
+  CreateCapacityPlanRequest,
+  CapacityPlanResponse,
+  SkillGapAnalysisRequest,
+  SkillGapAnalysisResponse,
+  MemberPerformanceDashboard,
+  CreateGoalRequest,
+  PerformanceGoal,
+  CreateFeedbackRequest,
+  FeedbackRequest,
+  CreateAnnouncementRequest,
+  Announcement,
+  CreateOneOnOneRequest,
+  OneOnOne,
+  CreateDecisionRequest,
+  TeamDecision,
+  CreateMonitoringRuleRequest,
+  MonitoringRule,
+  AlertsResponse,
+  AcknowledgeAlertRequest,
+  ResolveAlertRequest,
+  CreateRiskRequest,
+  Risk,
+  RisksResponse,
+  CreateFlagRequest,
+  PerformanceFlag,
+  FlagsResponse,
+  CreateTaskTemplateRequest,
+  TaskTemplate,
+  // Team Lead team types
+  MyTeamsResponse,
+  TeamLeadTeam,
 } from '@/api/types';
+
+// ============================================================================
+// TEAM MANAGEMENT
+// ============================================================================
+
+/**
+ * Get all teams managed by the authenticated team lead
+ */
+export const getMyTeams = async (): Promise<MyTeamsResponse> => {
+  const response = await apiClient.get<TeamLeadTeam[] | MyTeamsResponse>(ENDPOINTS.TEAM_LEAD.MY_TEAMS);
+  
+  // Handle case where API returns array directly instead of wrapped object
+  if (Array.isArray(response.data)) {
+    return {
+      teams: response.data,
+      total: response.data.length,
+    };
+  }
+  
+  return response.data;
+};
+
+/**
+ * Get specific team information by team code
+ */
+export const getTeamInfo = async (teamCode: string): Promise<TeamLeadTeam> => {
+  const response = await apiClient.get<TeamLeadTeam>(ENDPOINTS.TEAM_LEAD.TEAM_INFO(teamCode));
+  return response.data;
+};
+
+// ============================================================================
+// DASHBOARD
+// ============================================================================
+
+/**
+ * Get complete team dashboard
+ */
+export const getTeamDashboard = async (teamCode: string): Promise<TeamDashboardResponse> => {
+  const response = await apiClient.get<TeamDashboardResponse>(ENDPOINTS.TEAM_LEAD.DASHBOARD(teamCode));
+  return response.data;
+};
+
+// ============================================================================
+// SPRINT MANAGEMENT
+// ============================================================================
+
+/**
+ * Create a new sprint
+ */
+export const createSprint = async (data: CreateSprintRequest): Promise<Sprint> => {
+  const response = await apiClient.post<Sprint>(ENDPOINTS.TEAM_LEAD.SPRINTS.CREATE, data);
+  return response.data;
+};
+
+/**
+ * Get sprint dashboard with metrics and burndown data
+ */
+export const getSprintDashboard = async (sprintCode: string): Promise<SprintDashboardResponse> => {
+  const response = await apiClient.get<SprintDashboardResponse>(
+    ENDPOINTS.TEAM_LEAD.SPRINTS.DASHBOARD(sprintCode)
+  );
+  return response.data;
+};
+
+// ============================================================================
+// TASK MANAGEMENT
+// ============================================================================
 
 /**
  * Create a task
@@ -41,10 +146,10 @@ export const getTeamTasks = async (teamCode: string, filters?: TaskFilters): Pro
   if (filters?.status) queryParams.append('status', filters.status);
 
   const queryString = queryParams.toString();
-  const url = queryString 
-    ? `${ENDPOINTS.TEAM_LEAD.TASKS.LIST(teamCode)}?${queryString}` 
+  const url = queryString
+    ? `${ENDPOINTS.TEAM_LEAD.TASKS.LIST(teamCode)}?${queryString}`
     : ENDPOINTS.TEAM_LEAD.TASKS.LIST(teamCode);
-  
+
   const response = await apiClient.get<TasksResponse>(url);
   return response.data;
 };
@@ -89,6 +194,121 @@ export const updateTaskStatus = async (taskCode: string, data: UpdateTaskStatusR
   return response.data;
 };
 
+// ============================================================================
+// WORKLOAD & RESOURCE MANAGEMENT
+// ============================================================================
+
+/**
+ * Get team workload analysis
+ */
+export const getTeamWorkload = async (teamCode: string): Promise<TeamWorkloadResponse> => {
+  const response = await apiClient.get<TeamWorkloadResponse>(ENDPOINTS.TEAM_LEAD.WORKLOAD(teamCode));
+  return response.data;
+};
+
+/**
+ * Create capacity plan
+ */
+export const createCapacityPlan = async (
+  teamCode: string,
+  data: CreateCapacityPlanRequest
+): Promise<CapacityPlanResponse> => {
+  const response = await apiClient.post<CapacityPlanResponse>(
+    ENDPOINTS.TEAM_LEAD.CAPACITY_PLANS(teamCode),
+    data
+  );
+  return response.data;
+};
+
+/**
+ * Perform skill gap analysis
+ */
+export const performSkillGapAnalysis = async (
+  teamCode: string,
+  data: SkillGapAnalysisRequest
+): Promise<SkillGapAnalysisResponse> => {
+  const response = await apiClient.post<SkillGapAnalysisResponse>(
+    ENDPOINTS.TEAM_LEAD.SKILL_GAP_ANALYSIS(teamCode),
+    data
+  );
+  return response.data;
+};
+
+// ============================================================================
+// PERFORMANCE MANAGEMENT
+// ============================================================================
+
+/**
+ * Get member performance dashboard
+ */
+export const getMemberPerformanceDashboard = async (
+  userCode: string,
+  period?: 'current_week' | 'current_month' | 'current_quarter'
+): Promise<MemberPerformanceDashboard> => {
+  const url = period
+    ? `${ENDPOINTS.TEAM_LEAD.PERFORMANCE.MEMBER(userCode)}?period=${period}`
+    : ENDPOINTS.TEAM_LEAD.PERFORMANCE.MEMBER(userCode);
+  const response = await apiClient.get<MemberPerformanceDashboard>(url);
+  return response.data;
+};
+
+/**
+ * Create performance goal
+ */
+export const createPerformanceGoal = async (
+  userCode: string,
+  data: CreateGoalRequest
+): Promise<PerformanceGoal> => {
+  const response = await apiClient.post<PerformanceGoal>(
+    ENDPOINTS.TEAM_LEAD.PERFORMANCE.GOALS.CREATE(userCode),
+    data
+  );
+  return response.data;
+};
+
+/**
+ * Create 360 feedback request
+ */
+export const createFeedbackRequest = async (
+  userCode: string,
+  data: CreateFeedbackRequest
+): Promise<FeedbackRequest> => {
+  const response = await apiClient.post<FeedbackRequest>(
+    ENDPOINTS.TEAM_LEAD.PERFORMANCE.FEEDBACK.CREATE(userCode),
+    data
+  );
+  return response.data;
+};
+
+/**
+ * Get team performance
+ */
+export const getTeamPerformance = async (
+  teamCode: string,
+  filters: PerformanceFilters
+): Promise<TeamPerformanceResponse> => {
+  const url = `${ENDPOINTS.TEAM_LEAD.PERFORMANCE.TEAM(teamCode)}?period_start=${filters.period_start}&period_end=${filters.period_end}`;
+  const response = await apiClient.get<TeamPerformanceResponse>(url);
+  return response.data;
+};
+
+/**
+ * Get member performance
+ */
+export const getMemberPerformance = async (
+  teamCode: string,
+  userCode: string,
+  filters: PerformanceFilters
+): Promise<MemberPerformanceResponse> => {
+  const url = `${ENDPOINTS.TEAM_LEAD.PERFORMANCE.MEMBER(userCode)}?period_start=${filters.period_start}&period_end=${filters.period_end}`;
+  const response = await apiClient.get<MemberPerformanceResponse>(url);
+  return response.data;
+};
+
+// ============================================================================
+// OBSERVATIONS
+// ============================================================================
+
 /**
  * Create observation
  */
@@ -117,10 +337,10 @@ export const getMemberObservations = async (
   if (params?.limit) queryParams.append('limit', params.limit.toString());
 
   const queryString = queryParams.toString();
-  const url = queryString 
-    ? `${ENDPOINTS.TEAM_LEAD.OBSERVATIONS.LIST(teamCode, userCode)}?${queryString}` 
+  const url = queryString
+    ? `${ENDPOINTS.TEAM_LEAD.OBSERVATIONS.LIST(teamCode, userCode)}?${queryString}`
     : ENDPOINTS.TEAM_LEAD.OBSERVATIONS.LIST(teamCode, userCode);
-  
+
   const response = await apiClient.get<ObservationsResponse>(url);
   return response.data;
 };
@@ -152,30 +372,174 @@ export const deleteObservation = async (observationCode: string): Promise<{ mess
   return response.data;
 };
 
+// ============================================================================
+// COMMUNICATION
+// ============================================================================
+
 /**
- * Get team performance
+ * Create team announcement
  */
-export const getTeamPerformance = async (
+export const createAnnouncement = async (
   teamCode: string,
-  filters: PerformanceFilters
-): Promise<TeamPerformanceResponse> => {
-  const url = `${ENDPOINTS.TEAM_LEAD.PERFORMANCE.TEAM(teamCode)}?period_start=${filters.period_start}&period_end=${filters.period_end}`;
-  const response = await apiClient.get<TeamPerformanceResponse>(url);
+  data: CreateAnnouncementRequest
+): Promise<Announcement> => {
+  const response = await apiClient.post<Announcement>(
+    ENDPOINTS.TEAM_LEAD.ANNOUNCEMENTS.CREATE(teamCode),
+    data
+  );
   return response.data;
 };
 
 /**
- * Get member performance
+ * Schedule one-on-one
  */
-export const getMemberPerformance = async (
-  teamCode: string,
+export const scheduleOneOnOne = async (
   userCode: string,
-  filters: PerformanceFilters
-): Promise<MemberPerformanceResponse> => {
-  const url = `${ENDPOINTS.TEAM_LEAD.PERFORMANCE.MEMBER(teamCode, userCode)}?period_start=${filters.period_start}&period_end=${filters.period_end}`;
-  const response = await apiClient.get<MemberPerformanceResponse>(url);
+  data: CreateOneOnOneRequest
+): Promise<OneOnOne> => {
+  const response = await apiClient.post<OneOnOne>(
+    ENDPOINTS.TEAM_LEAD.ONE_ON_ONES.CREATE(userCode),
+    data
+  );
   return response.data;
 };
+
+/**
+ * Log team decision
+ */
+export const logTeamDecision = async (
+  teamCode: string,
+  data: CreateDecisionRequest
+): Promise<TeamDecision> => {
+  const response = await apiClient.post<TeamDecision>(
+    ENDPOINTS.TEAM_LEAD.DECISIONS.CREATE(teamCode),
+    data
+  );
+  return response.data;
+};
+
+// ============================================================================
+// MONITORING & ALERTS
+// ============================================================================
+
+/**
+ * Create monitoring rule
+ */
+export const createMonitoringRule = async (
+  teamCode: string,
+  data: CreateMonitoringRuleRequest
+): Promise<MonitoringRule> => {
+  const response = await apiClient.post<MonitoringRule>(
+    ENDPOINTS.TEAM_LEAD.MONITORING_RULES.CREATE(teamCode),
+    data
+  );
+  return response.data;
+};
+
+/**
+ * Get recent alerts
+ */
+export const getRecentAlerts = async (teamCode: string, days: number = 7): Promise<AlertsResponse> => {
+  const url = `${ENDPOINTS.TEAM_LEAD.ALERTS.LIST(teamCode)}?days=${days}`;
+  const response = await apiClient.get<AlertsResponse>(url);
+  return response.data;
+};
+
+/**
+ * Acknowledge alert
+ */
+export const acknowledgeAlert = async (
+  alertCode: string,
+  data?: AcknowledgeAlertRequest
+): Promise<{ message: string }> => {
+  const response = await apiClient.put<{ message: string }>(
+    ENDPOINTS.TEAM_LEAD.ALERTS.ACKNOWLEDGE(alertCode),
+    data || {}
+  );
+  return response.data;
+};
+
+/**
+ * Resolve alert
+ */
+export const resolveAlert = async (
+  alertCode: string,
+  data: ResolveAlertRequest
+): Promise<{ message: string }> => {
+  const response = await apiClient.put<{ message: string }>(
+    ENDPOINTS.TEAM_LEAD.ALERTS.RESOLVE(alertCode),
+    data
+  );
+  return response.data;
+};
+
+// ============================================================================
+// RISK MANAGEMENT
+// ============================================================================
+
+/**
+ * Create team risk
+ */
+export const createRisk = async (teamCode: string, data: CreateRiskRequest): Promise<Risk> => {
+  const response = await apiClient.post<Risk>(ENDPOINTS.TEAM_LEAD.RISKS.CREATE(teamCode), data);
+  return response.data;
+};
+
+/**
+ * Get active risks
+ */
+export const getActiveRisks = async (teamCode: string): Promise<RisksResponse> => {
+  const response = await apiClient.get<RisksResponse>(ENDPOINTS.TEAM_LEAD.RISKS.LIST(teamCode));
+  return response.data;
+};
+
+// ============================================================================
+// PERFORMANCE FLAGS
+// ============================================================================
+
+/**
+ * Flag performance issue
+ */
+export const flagPerformanceIssue = async (
+  userCode: string,
+  data: CreateFlagRequest
+): Promise<PerformanceFlag> => {
+  const response = await apiClient.post<PerformanceFlag>(
+    ENDPOINTS.TEAM_LEAD.FLAGS.CREATE(userCode),
+    data
+  );
+  return response.data;
+};
+
+/**
+ * Get active flags
+ */
+export const getActiveFlags = async (teamCode: string): Promise<FlagsResponse> => {
+  const response = await apiClient.get<FlagsResponse>(ENDPOINTS.TEAM_LEAD.FLAGS.LIST(teamCode));
+  return response.data;
+};
+
+// ============================================================================
+// TASK TEMPLATES
+// ============================================================================
+
+/**
+ * Create task template
+ */
+export const createTaskTemplate = async (
+  teamCode: string,
+  data: CreateTaskTemplateRequest
+): Promise<TaskTemplate> => {
+  const response = await apiClient.post<TaskTemplate>(
+    ENDPOINTS.TEAM_LEAD.TASK_TEMPLATES.CREATE(teamCode),
+    data
+  );
+  return response.data;
+};
+
+// ============================================================================
+// METRICS & GIT ACTIVITY
+// ============================================================================
 
 /**
  * Get team metrics
@@ -217,4 +581,3 @@ export const getMemberGitActivity = async (
   const response = await apiClient.get<MemberGitActivityResponse>(url);
   return response.data;
 };
-

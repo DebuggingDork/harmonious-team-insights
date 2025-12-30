@@ -63,9 +63,9 @@ import {
   useCreateObservation,
   useMemberObservations,
   useUpdateObservation,
-  useDeleteObservation
+  useDeleteObservation,
+  useMyTeams
 } from "@/hooks/useTeamLead";
-import { useMyTeams } from "@/hooks/useEmployee";
 import { format } from "date-fns";
 import type { ObservationCategory, ObservationRating, Observation } from "@/api/types";
 import { toast } from "@/hooks/use-toast";
@@ -135,7 +135,7 @@ const TeamLeadDashboard = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   // Get teams for the current user (team lead) - only when authenticated
-  const { data: teamsData, isLoading: isLoadingTeams, error: teamsError } = useMyTeams(undefined, isAuthenticated);
+  const { data: teamsData, isLoading: isLoadingTeams, error: teamsError } = useMyTeams(isAuthenticated);
 
   // Get the first team code (assuming team lead has at least one team)
   const teamCode = useMemo(() => {
@@ -304,30 +304,50 @@ const TeamLeadDashboard = () => {
     return {
       name: team.name || "Team",
       project: team.project_name || "Project",
-      size: teamPerformance?.members_summary?.total_members || 0,
+      size: team.member_count || team.members?.length || teamPerformance?.members_summary?.total_members || 0,
       status: "Active",
     };
   }, [teamsData, teamPerformance]);
 
   // Transform performance data for member activity
   const memberActivityData = useMemo(() => {
-    if (!teamPerformance?.members) return [];
-    return teamPerformance.members.map((member) => {
-      const trend = member.performance_score >= 80 ? "up" :
-        member.performance_score >= 60 ? "stable" : "down";
-      const consistency = member.performance_score >= 80 ? "high" :
-        member.performance_score >= 60 ? "medium" : "low";
-      const initials = member.user_name.split(' ').map(n => n[0]).join('').toUpperCase();
-      return {
-        name: member.user_name,
-        trend,
-        consistency,
-        lastActive: "Recently",
-        avatar: initials,
-        userCode: member.user_code,
-      };
-    });
-  }, [teamPerformance]);
+    // First try to use performance data if available
+    if (teamPerformance?.members && teamPerformance.members.length > 0) {
+      return teamPerformance.members.map((member) => {
+        const trend = member.performance_score >= 80 ? "up" :
+          member.performance_score >= 60 ? "stable" : "down";
+        const consistency = member.performance_score >= 80 ? "high" :
+          member.performance_score >= 60 ? "medium" : "low";
+        const initials = member.user_name.split(' ').map(n => n[0]).join('').toUpperCase();
+        return {
+          name: member.user_name,
+          trend,
+          consistency,
+          lastActive: "Recently",
+          avatar: initials,
+          userCode: member.user_code,
+        };
+      });
+    }
+    
+    // Fallback to members from teams data if available
+    const team = teamsData?.teams?.[0];
+    if (team?.members && team.members.length > 0) {
+      return team.members.map((member) => {
+        const initials = member.full_name.split(' ').map(n => n[0]).join('').toUpperCase();
+        return {
+          name: member.full_name,
+          trend: "stable" as const,
+          consistency: "medium" as const,
+          lastActive: "Recently",
+          avatar: initials,
+          userCode: member.user_code,
+        };
+      });
+    }
+    
+    return [];
+  }, [teamPerformance, teamsData]);
 
   // Get observations for filtered member
   // If "all" is selected, use the first member's code or selectedMemberCode if available

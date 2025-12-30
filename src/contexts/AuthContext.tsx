@@ -78,7 +78,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }, 100);
       }
     } catch (error) {
-      handleError(error, 'Login failed. Please check your credentials.');
+      // Don't show generic error here - let the LoginForm component handle it
+      // so it can show specific messages for blocked accounts, etc.
       throw error;
     }
   };

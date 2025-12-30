@@ -20,6 +20,8 @@ export const ENDPOINTS = {
       BLOCK: (id: string) => `${API_BASE}${API_PREFIX}/admin/users/${id}/block`,
       UNBLOCK: (id: string) => `${API_BASE}${API_PREFIX}/admin/users/${id}/unblock`,
       PROMOTE_ADMIN: `${API_BASE}${API_PREFIX}/admin/users/promote-admin`,
+      BULK_APPROVE: `${API_BASE}${API_PREFIX}/admin/users/bulk-approve`,
+      BULK_REJECT: `${API_BASE}${API_PREFIX}/admin/users/bulk-reject`,
     },
     PLUGINS: {
       LIST: `${API_BASE}${API_PREFIX}/admin/plugins`,
@@ -59,6 +61,20 @@ export const ENDPOINTS = {
 
   // Team Lead
   TEAM_LEAD: {
+    // Team Management
+    MY_TEAMS: `${API_BASE}${API_PREFIX}/team-lead/my-teams`,
+    TEAM_INFO: (teamCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}`,
+
+    // Dashboard
+    DASHBOARD: (teamCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/dashboard`,
+
+    // Sprint Management
+    SPRINTS: {
+      CREATE: `${API_BASE}${API_PREFIX}/team-lead/sprints`,
+      DASHBOARD: (sprintCode: string) => `${API_BASE}${API_PREFIX}/team-lead/sprints/${sprintCode}/dashboard`,
+    },
+
+    // Task Management
     TASKS: {
       CREATE: (teamCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/tasks`,
       LIST: (teamCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/tasks`,
@@ -68,6 +84,27 @@ export const ENDPOINTS = {
       ASSIGN: (taskCode: string) => `${API_BASE}${API_PREFIX}/team-lead/tasks/${taskCode}/assign`,
       UPDATE_STATUS: (taskCode: string) => `${API_BASE}${API_PREFIX}/team-lead/tasks/${taskCode}/status`,
     },
+
+    // Workload & Resource Management
+    WORKLOAD: (teamCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/workload`,
+    CAPACITY_PLANS: (teamCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/capacity-plans`,
+    SKILL_GAP_ANALYSIS: (teamCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/skill-gap-analysis`,
+
+    // Performance Management
+    PERFORMANCE: {
+      TEAM: (teamCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/performance`,
+      MEMBER: (userCode: string) => `${API_BASE}${API_PREFIX}/team-lead/members/${userCode}/performance`,
+      GOALS: {
+        CREATE: (userCode: string) => `${API_BASE}${API_PREFIX}/team-lead/members/${userCode}/goals`,
+        LIST: (userCode: string) => `${API_BASE}${API_PREFIX}/team-lead/members/${userCode}/goals`,
+      },
+      FEEDBACK: {
+        CREATE: (userCode: string) => `${API_BASE}${API_PREFIX}/team-lead/members/${userCode}/feedback-requests`,
+        LIST: (userCode: string) => `${API_BASE}${API_PREFIX}/team-lead/members/${userCode}/feedback-requests`,
+      },
+    },
+
+    // Observations
     OBSERVATIONS: {
       CREATE: (teamCode: string, userCode: string) =>
         `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/members/${userCode}/observations`,
@@ -77,14 +114,56 @@ export const ENDPOINTS = {
       UPDATE: (observationCode: string) => `${API_BASE}${API_PREFIX}/team-lead/observations/${observationCode}`,
       DELETE: (observationCode: string) => `${API_BASE}${API_PREFIX}/team-lead/observations/${observationCode}`,
     },
-    PERFORMANCE: {
-      TEAM: (teamCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/performance`,
-      MEMBER: (teamCode: string, userCode: string) =>
-        `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/members/${userCode}/performance`,
+
+    // Communication
+    ANNOUNCEMENTS: {
+      CREATE: (teamCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/announcements`,
+      LIST: (teamCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/announcements`,
     },
+    ONE_ON_ONES: {
+      CREATE: (userCode: string) => `${API_BASE}${API_PREFIX}/team-lead/members/${userCode}/one-on-ones`,
+      LIST: (userCode: string) => `${API_BASE}${API_PREFIX}/team-lead/members/${userCode}/one-on-ones`,
+    },
+    DECISIONS: {
+      CREATE: (teamCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/decisions`,
+      LIST: (teamCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/decisions`,
+    },
+
+    // Monitoring & Alerts
+    MONITORING_RULES: {
+      CREATE: (teamCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/monitoring-rules`,
+      LIST: (teamCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/monitoring-rules`,
+    },
+    ALERTS: {
+      LIST: (teamCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/alerts`,
+      ACKNOWLEDGE: (alertCode: string) => `${API_BASE}${API_PREFIX}/team-lead/alerts/${alertCode}/acknowledge`,
+      RESOLVE: (alertCode: string) => `${API_BASE}${API_PREFIX}/team-lead/alerts/${alertCode}/resolve`,
+    },
+
+    // Risk Management
+    RISKS: {
+      CREATE: (teamCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/risks`,
+      LIST: (teamCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/risks`,
+    },
+
+    // Performance Flags
+    FLAGS: {
+      CREATE: (userCode: string) => `${API_BASE}${API_PREFIX}/team-lead/members/${userCode}/flags`,
+      LIST: (teamCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/flags`,
+    },
+
+    // Task Templates
+    TASK_TEMPLATES: {
+      CREATE: (teamCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/task-templates`,
+      LIST: (teamCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/task-templates`,
+    },
+
+    // Metrics
     METRICS: {
       TEAM: (teamCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/metrics`,
     },
+
+    // GitHub Integration
     GITHUB: {
       LINK_REPOSITORY: (teamCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/github/repository`,
       GIT_ACTIVITY: (teamCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/git-activity`,
@@ -111,6 +190,7 @@ export const ENDPOINTS = {
       GET: `${API_BASE}${API_PREFIX}/employee/profile`,
       UPDATE: `${API_BASE}${API_PREFIX}/employee/profile`,
     },
+    // NOTE: This endpoint should ONLY be used by employees, never in admin dashboard or other roles
     TEAMS: `${API_BASE}${API_PREFIX}/employee/teams`,
     PROJECTS: `${API_BASE}${API_PREFIX}/employee/projects`,
     PERFORMANCE: `${API_BASE}${API_PREFIX}/employee/performance`,

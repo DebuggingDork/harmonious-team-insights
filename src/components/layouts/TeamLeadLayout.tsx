@@ -1,8 +1,7 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { useMyTeams } from "@/hooks/useEmployee";
-import { useTeamTasks } from "@/hooks/useTeamLead";
+import { useMyTeams, useTeamTasks } from "@/hooks/useTeamLead";
 import {
   Users,
   MessageSquare,
@@ -84,7 +83,7 @@ export const TeamLeadLayout = ({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Fetch notifications (tasks needing review)
-  const { data: teamsData } = useMyTeams(undefined, !!user);
+  const { data: teamsData } = useMyTeams(!!user);
   const teamCode = teamsData?.teams?.[0]?.team_code;
 
   // Use a stable filter object

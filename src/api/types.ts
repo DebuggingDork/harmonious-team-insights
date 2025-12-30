@@ -174,8 +174,10 @@ export interface TeamMember {
   full_name: string;
   email: string;
   role: UserRole;
-  allocation_percentage: number;
+  allocation_percentage?: number;
   joined_at: string;
+  avatar_url?: string | null;
+  team_role?: string;
 }
 
 export interface TeamMembersResponse {
@@ -186,6 +188,16 @@ export interface TeamMembersResponse {
     team_code: string;
     team_name: string;
   };
+}
+
+// Team Lead Specific Team Types
+export interface TeamLeadTeam extends Team {
+  members?: TeamMember[];
+}
+
+export interface MyTeamsResponse {
+  teams: TeamLeadTeam[];
+  total: number;
 }
 
 export interface AssignTeamLeadRequest {
@@ -645,6 +657,45 @@ export interface UnblockUserResponse {
   };
 }
 
+export interface BulkApproveUserRequest {
+  user_ids: string[];
+  role?: UserRole;
+  department_id?: string;
+}
+
+export interface BulkApproveUserError {
+  user_id: string;
+  error: string;
+}
+
+export interface BulkApproveUserResponse {
+  message: string;
+  approved: string[];
+  failed: BulkApproveUserError[];
+  total_requested: number;
+  total_approved: number;
+  total_failed: number;
+}
+
+export interface BulkRejectUserRequest {
+  user_ids: string[];
+  reason?: string;
+}
+
+export interface BulkRejectUserError {
+  user_id: string;
+  error: string;
+}
+
+export interface BulkRejectUserResponse {
+  message: string;
+  rejected: string[];
+  failed: BulkRejectUserError[];
+  total_requested: number;
+  total_rejected: number;
+  total_failed: number;
+}
+
 // Employee Types
 export interface EmployeeProfile {
   id: string;
@@ -725,5 +776,653 @@ export interface PerformanceFilters {
 export interface GitActivityFilters {
   start_date: string;
   end_date: string;
+}
+
+// ============================================================================
+// TEAM LEAD DASHBOARD TYPES (From Integration Documentation)
+// ============================================================================
+
+// Team Dashboard Types
+export type TeamHealthStatus = 'good' | 'at_risk' | 'critical';
+export type WorkloadStatus = 'underutilized' | 'normal' | 'optimal' | 'overloaded' | 'critical';
+export type AlertSeverity = 'low' | 'medium' | 'high' | 'critical';
+export type AlertStatus = 'active' | 'acknowledged' | 'resolved';
+export type RiskCategory = 'technical' | 'operational' | 'resource' | 'schedule' | 'quality' | 'external';
+export type RiskImpact = 'low' | 'medium' | 'high' | 'critical';
+export type RiskStatus = 'identified' | 'mitigating' | 'monitoring' | 'resolved';
+export type SprintStatus = 'planning' | 'active' | 'completed' | 'cancelled';
+export type FlagType = 'performance_decline' | 'quality_issues' | 'attendance_issues' | 'collaboration_problems' | 'skill_gap' | 'overload' | 'disengagement';
+export type FlagStatus = 'active' | 'investigating' | 'action_plan' | 'monitoring' | 'resolved';
+export type AnnouncementPriority = 'low' | 'medium' | 'high' | 'urgent';
+export type GoalCategory = 'learning' | 'performance' | 'technical' | 'leadership';
+export type GoalStatus = 'active' | 'completed' | 'cancelled';
+export type TrendDirection = 'improving' | 'stable' | 'declining';
+
+export interface TeamHealthMetrics {
+  score: number;
+  status: TeamHealthStatus;
+  factors: string[];
+}
+
+export interface QuickStats {
+  active_sprints: number;
+  active_tasks: number;
+  overdue_tasks: number;
+  blocked_tasks: number;
+  active_alerts: number;
+  high_risk_items: number;
+}
+
+export interface DashboardTeamMember {
+  user_id: string;
+  user_code: string;
+  full_name: string;
+  email: string;
+  avatar_url?: string;
+  team_role: string;
+  current_workload: WorkloadStatus;
+  active_flags: number;
+}
+
+export interface Sprint {
+  id: string;
+  sprint_code: string;
+  project_id?: string;
+  team_id?: string;
+  name: string;
+  description?: string;
+  sprint_number?: number;
+  status: SprintStatus;
+  start_date: string;
+  end_date: string;
+  capacity_hours?: number;
+  committed_hours?: number;
+  goals?: string[];
+  success_criteria?: string[];
+  velocity?: number | null;
+  created_at?: string;
+}
+
+export interface Alert {
+  id: string;
+  alert_code: string;
+  rule_id?: string;
+  title: string;
+  message?: string;
+  severity: AlertSeverity;
+  status: AlertStatus;
+  triggered_at: string;
+  triggered_by_entity_type?: string;
+  triggered_by_entity_id?: string;
+  context_data?: Record<string, any>;
+  acknowledged_at?: string;
+  resolved_at?: string;
+}
+
+export interface Risk {
+  id: string;
+  risk_code: string;
+  team_id?: string;
+  title: string;
+  description?: string;
+  risk_category: RiskCategory;
+  probability?: number;
+  impact: RiskImpact;
+  risk_score: number;
+  current_status: RiskStatus;
+  owner_id?: string;
+  mitigation_plan?: string;
+  mitigation_actions?: Array<{
+    action: string;
+    due_date: string;
+    status: string;
+  }>;
+  contingency_plan?: string;
+  identified_date?: string;
+  target_resolution_date?: string;
+  next_review_date?: string;
+  created_at?: string;
+}
+
+export interface Milestone {
+  id: string;
+  milestone_code: string;
+  title: string;
+  target_date: string;
+  status: string;
+  description?: string;
+}
+
+export interface ActionItem {
+  type: string;
+  priority: string;
+  title: string;
+  action: string;
+  entity_id: string;
+}
+
+export interface TeamDashboardResponse {
+  team: {
+    id: string;
+    team_code: string;
+    name: string;
+    member_count: number;
+  };
+  team_health: TeamHealthMetrics;
+  quick_stats: QuickStats;
+  team_members: DashboardTeamMember[];
+  active_sprints: Sprint[];
+  recent_alerts: Alert[];
+  active_risks: Risk[];
+  upcoming_milestones: Milestone[];
+  action_items: ActionItem[];
+}
+
+// Sprint Management Types
+export interface CreateSprintRequest {
+  project_id: string;
+  team_id: string;
+  name: string;
+  description?: string;
+  sprint_number: number;
+  start_date: string;
+  end_date: string;
+  capacity_hours: number;
+  goals?: string[];
+  success_criteria?: string[];
+}
+
+export interface SprintMetrics {
+  total_tasks: number;
+  completed_tasks: number;
+  in_progress_tasks: number;
+  blocked_tasks: number;
+  total_story_points: number;
+  completed_story_points: number;
+  progress_percentage: number;
+  velocity: number | null;
+  days_remaining: number;
+}
+
+export interface BurndownData {
+  ideal_line: number[];
+  actual_line: number[];
+  scope_changes: Array<{
+    date: string;
+    change: number;
+    reason: string;
+  }>;
+}
+
+export interface SprintDashboardResponse {
+  sprint: Sprint;
+  metrics: SprintMetrics;
+  burndown_data: BurndownData;
+  tasks: {
+    completed: Task[];
+    in_progress: Task[];
+    blocked: Task[];
+  };
+}
+
+// Workload Management Types
+export interface MemberWorkload {
+  total_assigned_hours: number;
+  total_estimated_hours: number;
+  active_tasks_count: number;
+  overdue_tasks_count: number;
+  blocked_tasks_count: number;
+  workload_percentage: number;
+  utilization_percentage: number;
+  status: WorkloadStatus;
+}
+
+export interface MemberAvailability {
+  availability_percentage: number;
+  availability_type: string;
+}
+
+export interface MemberSkill {
+  skill_name: string;
+  proficiency_level: number;
+}
+
+export interface TeamWorkloadMember {
+  member: {
+    user_id: string;
+    user_code: string;
+    full_name: string;
+    email: string;
+    team_role: string;
+  };
+  workload: MemberWorkload;
+  availability: MemberAvailability;
+  skills: MemberSkill[];
+}
+
+export interface TeamWorkloadResponse {
+  team_metrics: {
+    total_capacity: number;
+    average_utilization: number;
+    overloaded_count: number;
+    underutilized_count: number;
+  };
+  member_workloads: TeamWorkloadMember[];
+  recommendations: string[];
+}
+
+export interface CreateCapacityPlanRequest {
+  period_start: string;
+  period_end: string;
+  period_type: string;
+  total_capacity_hours: number;
+  member_allocations: Array<{
+    user_id: string;
+    allocated_hours: number;
+    allocation_percentage: number;
+  }>;
+  external_resources?: any[];
+  notes?: string;
+}
+
+export interface CapacityPlanResponse {
+  id: string;
+  team_id: string;
+  period_start: string;
+  period_end: string;
+  period_type: string;
+  total_capacity_hours: number;
+  allocated_hours: number;
+  member_allocations: any[];
+  created_at: string;
+}
+
+export interface SkillGapAnalysisRequest {
+  required_skills: Array<{
+    skill: string;
+    required_level: number;
+    required_members: number;
+  }>;
+}
+
+export interface SkillGapAnalysisResponse {
+  id: string;
+  team_id: string;
+  analysis_date: string;
+  analysis_period: string;
+  required_skills: any[];
+  current_skills: Record<string, { avg_level: number; member_count: number }>;
+  skill_gaps: Array<{
+    skill: string;
+    gap: number;
+    priority: string;
+  }>;
+  recommendations: string[];
+}
+
+// Performance Management Types
+export interface PerformanceGoal {
+  id: string;
+  goal_code: string;
+  user_id?: string;
+  title: string;
+  description?: string;
+  category: GoalCategory;
+  priority?: string;
+  period_start?: string;
+  period_end: string;
+  target_metrics?: Array<{
+    metric: string;
+    target: number;
+  }>;
+  milestones?: Array<{
+    title: string;
+    due_date: string;
+    completed?: boolean;
+  }>;
+  progress_percentage: number;
+  status: GoalStatus;
+  created_at?: string;
+}
+
+export interface CreateGoalRequest {
+  title: string;
+  description?: string;
+  category: GoalCategory;
+  priority?: string;
+  period_start?: string;
+  period_end: string;
+  target_metrics?: Array<{
+    metric: string;
+    target: number;
+  }>;
+  milestones?: Array<{
+    title: string;
+    due_date: string;
+  }>;
+}
+
+export interface PerformanceSummary {
+  overall_score: number;
+  tier: string;
+  trend_direction: TrendDirection;
+  risk_level: string;
+}
+
+export interface PerformanceTrends {
+  velocity_trend: number;
+  quality_trend: number;
+  overall_direction: TrendDirection;
+  risk_level: string;
+}
+
+export interface MemberPerformanceDashboard {
+  user: {
+    id: string;
+    user_code: string;
+    full_name: string;
+    email: string;
+    avatar_url?: string;
+  };
+  performance_summary: PerformanceSummary;
+  goals: {
+    active: PerformanceGoal[];
+    completed: PerformanceGoal[];
+    completion_rate: number;
+  };
+  metrics: Array<{
+    metric_date: string;
+    tasks_completed: number;
+    tasks_on_time: number;
+    story_points_completed: number;
+    code_review_participation: number;
+    pr_reviews_given: number;
+  }>;
+  trends: PerformanceTrends;
+  flags: any[];
+  recent_observations: Observation[];
+  recommendations: string[];
+}
+
+export interface FeedbackRequest {
+  id: string;
+  request_code: string;
+  subject_user_id: string;
+  title: string;
+  description?: string;
+  feedback_type: string;
+  reviewers: Array<{
+    user_id: string;
+    relationship: string;
+  }>;
+  questions: Array<{
+    question: string;
+    type: string;
+  }>;
+  anonymous: boolean;
+  deadline: string;
+  status: string;
+  created_at: string;
+}
+
+export interface CreateFeedbackRequest {
+  title: string;
+  description?: string;
+  feedback_type: string;
+  reviewers: Array<{
+    user_id: string;
+    relationship: string;
+  }>;
+  questions: Array<{
+    question: string;
+    type: string;
+  }>;
+  anonymous: boolean;
+  deadline: string;
+}
+
+// Communication Types
+export interface Announcement {
+  id: string;
+  announcement_code: string;
+  team_id: string;
+  title: string;
+  message: string;
+  priority: AnnouncementPriority;
+  channels: string[];
+  target_audience: string;
+  is_pinned: boolean;
+  expires_at?: string;
+  read_by: string[];
+  acknowledged_by: string[];
+  created_at: string;
+}
+
+export interface CreateAnnouncementRequest {
+  title: string;
+  message: string;
+  priority: AnnouncementPriority;
+  channels: string[];
+  target_audience: string;
+  is_pinned?: boolean;
+  expires_at?: string;
+}
+
+export interface OneOnOne {
+  id: string;
+  session_code: string;
+  manager_id: string;
+  employee_id: string;
+  scheduled_date: string;
+  duration_minutes: number;
+  agenda: string[];
+  status: string;
+  notes?: string;
+  action_items?: string[];
+  created_at: string;
+}
+
+export interface CreateOneOnOneRequest {
+  scheduled_date: string;
+  duration_minutes: number;
+  agenda: string[];
+}
+
+export interface TeamDecision {
+  id: string;
+  decision_code: string;
+  team_id: string;
+  title: string;
+  description?: string;
+  decision_type: string;
+  context?: string;
+  options_considered?: Array<{
+    option: string;
+    pros: string[];
+    cons: string[];
+  }>;
+  decision_made: string;
+  rationale?: string;
+  decision_makers?: string[];
+  stakeholders?: string[];
+  implementation_date?: string;
+  created_at: string;
+}
+
+export interface CreateDecisionRequest {
+  title: string;
+  description?: string;
+  decision_type: string;
+  context?: string;
+  options_considered?: Array<{
+    option: string;
+    pros: string[];
+    cons: string[];
+  }>;
+  decision_made: string;
+  rationale?: string;
+  decision_makers?: string[];
+  stakeholders?: string[];
+  implementation_date?: string;
+}
+
+// Monitoring & Alerts Types
+export interface MonitoringRule {
+  id: string;
+  rule_code: string;
+  team_id: string;
+  name: string;
+  description?: string;
+  rule_type: string;
+  condition_sql?: string;
+  trigger_frequency: string;
+  severity: AlertSeverity;
+  notification_channels: string[];
+  notify_roles?: string[];
+  auto_actions?: Array<{
+    action: string;
+    params: Record<string, any>;
+  }>;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface CreateMonitoringRuleRequest {
+  name: string;
+  description?: string;
+  rule_type: string;
+  condition_sql?: string;
+  trigger_frequency: string;
+  severity: AlertSeverity;
+  notification_channels: string[];
+  notify_roles?: string[];
+  auto_actions?: Array<{
+    action: string;
+    params: Record<string, any>;
+  }>;
+}
+
+export interface AlertsResponse {
+  alerts: Alert[];
+  summary: {
+    total: number;
+    by_severity: Record<AlertSeverity, number>;
+    by_status: Record<AlertStatus, number>;
+  };
+}
+
+export interface AcknowledgeAlertRequest {
+  notes?: string;
+}
+
+export interface ResolveAlertRequest {
+  resolution_notes: string;
+}
+
+// Risk Management Types
+export interface CreateRiskRequest {
+  title: string;
+  description?: string;
+  risk_category: RiskCategory;
+  probability: number;
+  impact: RiskImpact;
+  owner_id?: string;
+  mitigation_plan?: string;
+  mitigation_actions?: Array<{
+    action: string;
+    due_date: string;
+    status: string;
+  }>;
+  contingency_plan?: string;
+  target_resolution_date?: string;
+}
+
+export interface RisksResponse {
+  risks: Risk[];
+  summary: {
+    total: number;
+    by_category: Record<string, number>;
+    high_risk_count: number;
+    average_risk_score: number;
+  };
+}
+
+// Performance Flags Types
+export interface PerformanceFlag {
+  id: string;
+  flag_code: string;
+  user_id: string;
+  team_id: string;
+  flag_type: FlagType;
+  severity: AlertSeverity;
+  title: string;
+  description?: string;
+  evidence?: string[];
+  metrics_data?: Record<string, any>;
+  flagged_by: string;
+  flagged_date: string;
+  status: FlagStatus;
+  action_plan?: string;
+  escalation_level: number;
+  created_at: string;
+}
+
+export interface CreateFlagRequest {
+  flag_type: FlagType;
+  severity: AlertSeverity;
+  title: string;
+  description?: string;
+  evidence?: string[];
+  metrics_data?: Record<string, any>;
+  action_plan?: string;
+  target_resolution_date?: string;
+}
+
+export interface FlagsResponse {
+  flags: PerformanceFlag[];
+  summary?: {
+    total: number;
+    by_type: Record<FlagType, number>;
+    by_severity: Record<AlertSeverity, number>;
+  };
+}
+
+// Task Template Types
+export interface TaskTemplate {
+  id: string;
+  template_code: string;
+  team_id: string;
+  name: string;
+  category: string;
+  title_pattern: string;
+  description_pattern: string;
+  default_task_type?: string;
+  default_complexity?: string;
+  default_estimated_hours?: number;
+  default_priority?: number;
+  subtask_templates?: Array<{
+    title: string;
+    estimated_hours: number;
+  }>;
+  default_acceptance_criteria?: string[];
+  default_tags?: string[];
+  created_at: string;
+}
+
+export interface CreateTaskTemplateRequest {
+  name: string;
+  category: string;
+  title_pattern: string;
+  description_pattern: string;
+  default_task_type?: string;
+  default_complexity?: string;
+  default_estimated_hours?: number;
+  default_priority?: number;
+  subtask_templates?: Array<{
+    title: string;
+    estimated_hours: number;
+  }>;
+  default_acceptance_criteria?: string[];
+  default_tags?: string[];
 }
 

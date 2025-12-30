@@ -125,6 +125,8 @@ export const updateMyProfile = async (data: UpdateProfileRequest): Promise<Emplo
 
 /**
  * Get my teams
+ * NOTE: This function calls /api/employee/teams and should ONLY be used by employees.
+ * Admin dashboard and other roles should NOT use this endpoint.
  */
 export const getMyTeams = async (params?: { page?: number; limit?: number }): Promise<EmployeeTeamsResponse> => {
   const queryParams = new URLSearchParams();

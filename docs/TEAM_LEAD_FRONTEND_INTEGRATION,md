@@ -1,0 +1,1279 @@
+# Team Lead Frontend Integration Guide
+
+## Overview
+
+This document provides comprehensive API integration details for the Team Lead Dashboard features. All endpoints require authentication and team lead authorization.
+
+## Base URL
+```
+Production: https://api.yourapp.com/api/team-lead
+Development: http://localhost:3000/api/team-lead
+```
+
+## Authentication
+
+All requests require a JWT token in the Authorization header:
+
+```javascript
+headers: {
+  'Authorization': 'Bearer YOUR_JWT_TOKEN',
+  'Content-Type': 'application/json'
+}
+```
+
+---
+
+## 1. COMPREHENSIVE TEAM DASHBOARD
+
+### GET Complete Team Dashboard
+**Endpoint:** `GET /teams/:teamCode/dashboard`
+
+Returns all team data in a single call - ideal for initial dashboard load.
+
+**Request:**
+```bash
+curl -X GET http://localhost:3000/api/team-lead/teams/TEAM00000001/dashboard \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+**Response:**
+```json
+{
+  "team": {
+    "id": "uuid",
+    "team_code": "TEAM00000001",
+    "name": "Backend Team",
+    "member_count": 8
+  },
+  "team_health": {
+    "score": 85,
+    "status": "good",
+    "factors": ["2 overdue tasks", "1 high-risk item"]
+  },
+  "quick_stats": {
+    "active_sprints": 1,
+    "active_tasks": 24,
+    "overdue_tasks": 2,
+    "blocked_tasks": 1,
+    "active_alerts": 3,
+    "high_risk_items": 1
+  },
+  "team_members": [
+    {
+      "user_id": "uuid",
+      "user_code": "USER00000001",
+      "full_name": "John Doe",
+      "email": "john@company.com",
+      "avatar_url": "https://...",
+      "team_role": "developer",
+      "current_workload": "normal",
+      "active_flags": 0
+    }
+  ],
+  "active_sprints": [
+    {
+      "id": "uuid",
+      "sprint_code": "SPRT00000001",
+      "name": "Sprint 23",
+      "status": "active",
+      "start_date": "2025-01-01",
+      "end_date": "2025-01-14"
+    }
+  ],
+  "recent_alerts": [
+    {
+      "id": "uuid",
+      "alert_code": "ALRT00000001",
+      "title": "Task overdue",
+      "severity": "high",
+      "status": "active",
+      "triggered_at": "2025-01-10T10:00:00Z"
+    }
+  ],
+  "active_risks": [
+    {
+      "id": "uuid",
+      "risk_code": "RISK00000001",
+      "title": "Key developer on leave",
+      "risk_score": 7.5,
+      "current_status": "mitigating"
+    }
+  ],
+  "upcoming_milestones": [
+    {
+      "id": "uuid",
+      "milestone_code": "MLST00000001",
+      "title": "MVP Release",
+      "target_date": "2025-02-01",
+      "status": "in_progress"
+    }
+  ],
+  "action_items": [
+    {
+      "type": "alert",
+      "priority": "high",
+      "title": "Task overdue",
+      "action": "Review and resolve alert",
+      "entity_id": "uuid"
+    }
+  ]
+}
+```
+
+**UI Components to Build:**
+- Team Health Score Card (circular progress with status color)
+- Quick Stats Grid (6 metric cards)
+- Team Members List with workload indicators
+- Active Sprints Timeline
+- Alerts Panel (filterable by severity)
+- Risk Matrix View
+- Milestones Timeline
+- Action Items Priority List
+
+---
+
+## 2. SPRINT MANAGEMENT
+
+### Create Sprint
+**Endpoint:** `POST /sprints`
+
+```bash
+curl -X POST http://localhost:3000/api/team-lead/sprints \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "project_id": "uuid",
+    "team_id": "uuid",
+    "name": "Sprint 24",
+    "description": "Feature development sprint",
+    "sprint_number": 24,
+    "start_date": "2025-01-15",
+    "end_date": "2025-01-28",
+    "capacity_hours": 320,
+    "goals": ["Complete user auth", "API documentation"],
+    "success_criteria": ["All tests passing", "Code review completed"]
+  }'
+```
+
+**Response:**
+```json
+{
+  "id": "uuid",
+  "sprint_code": "SPRT00000024",
+  "project_id": "uuid",
+  "team_id": "uuid",
+  "name": "Sprint 24",
+  "description": "Feature development sprint",
+  "sprint_number": 24,
+  "start_date": "2025-01-15T00:00:00Z",
+  "end_date": "2025-01-28T00:00:00Z",
+  "capacity_hours": 320,
+  "committed_hours": 0,
+  "goals": ["Complete user auth", "API documentation"],
+  "success_criteria": ["All tests passing", "Code review completed"],
+  "status": "planning",
+  "velocity": null,
+  "created_at": "2025-01-10T10:00:00Z"
+}
+```
+
+### Get Sprint Dashboard
+**Endpoint:** `GET /sprints/:sprintCode/dashboard`
+
+```bash
+curl -X GET http://localhost:3000/api/team-lead/sprints/SPRT00000024/dashboard \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+**Response:**
+```json
+{
+  "sprint": {
+    "id": "uuid",
+    "sprint_code": "SPRT00000024",
+    "name": "Sprint 24",
+    "status": "active",
+    "start_date": "2025-01-15",
+    "end_date": "2025-01-28"
+  },
+  "metrics": {
+    "total_tasks": 15,
+    "completed_tasks": 8,
+    "in_progress_tasks": 5,
+    "blocked_tasks": 2,
+    "total_story_points": 42,
+    "completed_story_points": 24,
+    "progress_percentage": 57.14,
+    "velocity": null,
+    "days_remaining": 5
+  },
+  "burndown_data": {
+    "ideal_line": [42, 39, 36, 33, 30, 27, 24, 21, 18, 15, 12, 9, 6, 3, 0],
+    "actual_line": [42, 40, 38, 35, 32, 28, 24, 22, 18],
+    "scope_changes": [
+      {"date": "2025-01-18", "change": 3, "reason": "New requirement added"}
+    ]
+  },
+  "tasks": {
+    "completed": [...],
+    "in_progress": [...],
+    "blocked": [...]
+  }
+}
+```
+
+**UI Components:**
+- Sprint Progress Bar
+- Burndown Chart (Line chart with ideal vs actual)
+- Task Kanban Board (Todo, In Progress, Blocked, Done)
+- Sprint Metrics Cards
+- Days Remaining Counter
+
+---
+
+## 3. RESOURCE & WORKLOAD MANAGEMENT
+
+### Get Team Workload Analysis
+**Endpoint:** `GET /teams/:teamCode/workload`
+
+```bash
+curl -X GET http://localhost:3000/api/team-lead/teams/TEAM00000001/workload \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+**Response:**
+```json
+{
+  "team_metrics": {
+    "total_capacity": 800,
+    "average_utilization": 72.5,
+    "overloaded_count": 1,
+    "underutilized_count": 2
+  },
+  "member_workloads": [
+    {
+      "member": {
+        "user_id": "uuid",
+        "user_code": "USER00000001",
+        "full_name": "John Doe",
+        "email": "john@company.com",
+        "team_role": "senior_developer"
+      },
+      "workload": {
+        "total_assigned_hours": 45,
+        "total_estimated_hours": 40,
+        "active_tasks_count": 5,
+        "overdue_tasks_count": 1,
+        "blocked_tasks_count": 0,
+        "workload_percentage": 112.5,
+        "utilization_percentage": 90,
+        "status": "overloaded"
+      },
+      "availability": {
+        "availability_percentage": 100,
+        "availability_type": "available"
+      },
+      "skills": [
+        {"skill_name": "TypeScript", "proficiency_level": 5},
+        {"skill_name": "Node.js", "proficiency_level": 4},
+        {"skill_name": "PostgreSQL", "proficiency_level": 4}
+      ]
+    }
+  ],
+  "recommendations": [
+    "1 team member(s) are overloaded - consider redistributing tasks",
+    "2 team member(s) have capacity for additional work"
+  ]
+}
+```
+
+**Workload Status Values:**
+- `underutilized` - < 50% capacity
+- `normal` - 50-80% capacity
+- `optimal` - 80-100% capacity
+- `overloaded` - 100-120% capacity
+- `critical` - > 120% capacity
+
+**UI Components:**
+- Team Capacity Gauge
+- Member Workload Cards with status indicators
+- Workload Distribution Chart (Bar chart)
+- Skills Matrix Table
+- Recommendations Panel
+
+### Create Capacity Plan
+**Endpoint:** `POST /teams/:teamCode/capacity-plans`
+
+```bash
+curl -X POST http://localhost:3000/api/team-lead/teams/TEAM00000001/capacity-plans \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "period_start": "2025-01-15",
+    "period_end": "2025-01-28",
+    "period_type": "sprint",
+    "total_capacity_hours": 320,
+    "member_allocations": [
+      {"user_id": "uuid", "allocated_hours": 40, "allocation_percentage": 100},
+      {"user_id": "uuid", "allocated_hours": 32, "allocation_percentage": 80}
+    ],
+    "external_resources": [],
+    "notes": "Sprint 24 capacity plan"
+  }'
+```
+
+**Response:**
+```json
+{
+  "id": "uuid",
+  "team_id": "uuid",
+  "period_start": "2025-01-15",
+  "period_end": "2025-01-28",
+  "period_type": "sprint",
+  "total_capacity_hours": 320,
+  "allocated_hours": 72,
+  "member_allocations": [...],
+  "created_at": "2025-01-10T10:00:00Z"
+}
+```
+
+### Perform Skill Gap Analysis
+**Endpoint:** `POST /teams/:teamCode/skill-gap-analysis`
+
+```bash
+curl -X POST http://localhost:3000/api/team-lead/teams/TEAM00000001/skill-gap-analysis \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "required_skills": [
+      {"skill": "Kubernetes", "required_level": 4, "required_members": 2},
+      {"skill": "React", "required_level": 4, "required_members": 3},
+      {"skill": "GraphQL", "required_level": 3, "required_members": 2}
+    ]
+  }'
+```
+
+**Response:**
+```json
+{
+  "id": "uuid",
+  "team_id": "uuid",
+  "analysis_date": "2025-01-10",
+  "analysis_period": "current",
+  "required_skills": [...],
+  "current_skills": {
+    "Kubernetes": {"avg_level": 2.5, "member_count": 1},
+    "React": {"avg_level": 4.2, "member_count": 4},
+    "GraphQL": {"avg_level": 0, "member_count": 0}
+  },
+  "skill_gaps": [
+    {"skill": "Kubernetes", "gap": 1.5, "priority": "high"},
+    {"skill": "GraphQL", "gap": 3, "priority": "critical"}
+  ],
+  "recommendations": [
+    "Urgent: Hire specialist or provide intensive training for GraphQL",
+    "High priority: Upskill team members in Kubernetes"
+  ]
+}
+```
+
+**UI Components:**
+- Skill Gap Radar Chart
+- Priority Matrix (skill vs gap severity)
+- Training Recommendations List
+- Current vs Required Skills Comparison
+
+---
+
+## 4. PERFORMANCE MANAGEMENT
+
+### Get Member Performance Dashboard
+**Endpoint:** `GET /members/:userCode/performance?period=current_quarter`
+
+```bash
+curl -X GET "http://localhost:3000/api/team-lead/members/USER00000001/performance?period=current_quarter" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+**Query Parameters:**
+- `period`: `current_week` | `current_month` | `current_quarter` (default)
+
+**Response:**
+```json
+{
+  "user": {
+    "id": "uuid",
+    "user_code": "USER00000001",
+    "full_name": "John Doe",
+    "email": "john@company.com",
+    "avatar_url": "https://..."
+  },
+  "performance_summary": {
+    "overall_score": 85,
+    "tier": "Tier 2",
+    "trend_direction": "improving",
+    "risk_level": "low"
+  },
+  "goals": {
+    "active": [
+      {
+        "id": "uuid",
+        "goal_code": "GOAL00000001",
+        "title": "Complete AWS certification",
+        "category": "learning",
+        "progress_percentage": 60,
+        "period_end": "2025-03-31"
+      }
+    ],
+    "completed": [...],
+    "completion_rate": 75
+  },
+  "metrics": [
+    {
+      "metric_date": "2025-01-10",
+      "tasks_completed": 5,
+      "tasks_on_time": 4,
+      "story_points_completed": 13,
+      "code_review_participation": 85,
+      "pr_reviews_given": 8
+    }
+  ],
+  "trends": {
+    "velocity_trend": 1.2,
+    "quality_trend": 0.95,
+    "overall_direction": "improving",
+    "risk_level": "low"
+  },
+  "flags": [],
+  "recent_observations": [
+    {
+      "id": "uuid",
+      "observation_date": "2025-01-08",
+      "category": "collaboration",
+      "rating": 4,
+      "notes": "Great teamwork on the API project",
+      "evaluator_name": "Jane Smith"
+    }
+  ],
+  "recommendations": []
+}
+```
+
+**Performance Tiers:**
+- `Tier 1` - Exceptional (90-100)
+- `Tier 2` - Exceeds Expectations (80-89)
+- `Tier 3` - Meets Expectations (70-79)
+- `Tier 4` - Needs Improvement (60-69)
+- `Tier 5` - Underperforming (<60)
+
+**UI Components:**
+- Performance Score Gauge
+- Tier Badge with color coding
+- Goals Progress List
+- Metrics Trend Charts
+- Observations Timeline
+- Performance Flags Alert Panel
+
+### Create Performance Goal
+**Endpoint:** `POST /members/:userCode/goals`
+
+```bash
+curl -X POST http://localhost:3000/api/team-lead/members/USER00000001/goals \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Complete AWS Solutions Architect certification",
+    "description": "Obtain AWS SAA-C03 certification",
+    "category": "learning",
+    "priority": "high",
+    "period_start": "2025-01-01",
+    "period_end": "2025-03-31",
+    "target_metrics": [
+      {"metric": "study_hours", "target": 40},
+      {"metric": "practice_exams", "target": 5}
+    ],
+    "milestones": [
+      {"title": "Complete course", "due_date": "2025-02-15"},
+      {"title": "Pass practice exam", "due_date": "2025-03-15"},
+      {"title": "Take certification exam", "due_date": "2025-03-31"}
+    ]
+  }'
+```
+
+**Response:**
+```json
+{
+  "id": "uuid",
+  "goal_code": "GOAL00000001",
+  "user_id": "uuid",
+  "title": "Complete AWS Solutions Architect certification",
+  "description": "Obtain AWS SAA-C03 certification",
+  "category": "learning",
+  "priority": "high",
+  "period_start": "2025-01-01",
+  "period_end": "2025-03-31",
+  "target_metrics": [...],
+  "milestones": [...],
+  "progress_percentage": 0,
+  "status": "active",
+  "created_at": "2025-01-10T10:00:00Z"
+}
+```
+
+### Create 360 Feedback Request
+**Endpoint:** `POST /members/:userCode/feedback-requests`
+
+```bash
+curl -X POST http://localhost:3000/api/team-lead/members/USER00000001/feedback-requests \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Q1 2025 360 Feedback",
+    "description": "Quarterly performance feedback collection",
+    "feedback_type": "360",
+    "reviewers": [
+      {"user_id": "uuid", "relationship": "peer"},
+      {"user_id": "uuid", "relationship": "peer"},
+      {"user_id": "uuid", "relationship": "direct_report"}
+    ],
+    "questions": [
+      {"question": "How effectively does this person collaborate?", "type": "rating"},
+      {"question": "What are their key strengths?", "type": "text"},
+      {"question": "What areas could they improve?", "type": "text"}
+    ],
+    "anonymous": true,
+    "deadline": "2025-01-31"
+  }'
+```
+
+**Response:**
+```json
+{
+  "id": "uuid",
+  "request_code": "FDBK00000001",
+  "subject_user_id": "uuid",
+  "title": "Q1 2025 360 Feedback",
+  "feedback_type": "360",
+  "reviewers": [...],
+  "questions": [...],
+  "anonymous": true,
+  "deadline": "2025-01-31",
+  "status": "active",
+  "created_at": "2025-01-10T10:00:00Z"
+}
+```
+
+---
+
+## 5. TEAM COMMUNICATION
+
+### Create Team Announcement
+**Endpoint:** `POST /teams/:teamCode/announcements`
+
+```bash
+curl -X POST http://localhost:3000/api/team-lead/teams/TEAM00000001/announcements \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Sprint 24 Kickoff",
+    "message": "Sprint 24 starts Monday. Please review the sprint goals.",
+    "priority": "high",
+    "channels": ["dashboard", "email"],
+    "target_audience": "all",
+    "is_pinned": true,
+    "expires_at": "2025-01-20T00:00:00Z"
+  }'
+```
+
+**Response:**
+```json
+{
+  "id": "uuid",
+  "announcement_code": "ANNC00000001",
+  "team_id": "uuid",
+  "title": "Sprint 24 Kickoff",
+  "message": "Sprint 24 starts Monday. Please review the sprint goals.",
+  "priority": "high",
+  "channels": ["dashboard", "email"],
+  "target_audience": "all",
+  "is_pinned": true,
+  "expires_at": "2025-01-20T00:00:00Z",
+  "read_by": [],
+  "acknowledged_by": [],
+  "created_at": "2025-01-10T10:00:00Z"
+}
+```
+
+**Priority Values:** `low` | `medium` | `high` | `urgent`
+
+### Schedule One-on-One
+**Endpoint:** `POST /members/:userCode/one-on-ones`
+
+```bash
+curl -X POST http://localhost:3000/api/team-lead/members/USER00000001/one-on-ones \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "scheduled_date": "2025-01-15T14:00:00Z",
+    "duration_minutes": 30,
+    "agenda": [
+      "Review Q4 performance",
+      "Discuss career goals",
+      "Address any blockers"
+    ]
+  }'
+```
+
+**Response:**
+```json
+{
+  "id": "uuid",
+  "session_code": "1ON100000001",
+  "manager_id": "uuid",
+  "employee_id": "uuid",
+  "scheduled_date": "2025-01-15T14:00:00Z",
+  "duration_minutes": 30,
+  "agenda": [...],
+  "status": "scheduled",
+  "created_at": "2025-01-10T10:00:00Z"
+}
+```
+
+### Log Team Decision
+**Endpoint:** `POST /teams/:teamCode/decisions`
+
+```bash
+curl -X POST http://localhost:3000/api/team-lead/teams/TEAM00000001/decisions \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Adopt TypeScript for all new projects",
+    "description": "Decision to standardize on TypeScript",
+    "decision_type": "technical",
+    "context": "Need for better type safety and developer experience",
+    "options_considered": [
+      {"option": "Keep JavaScript", "pros": ["No migration"], "cons": ["Type errors"]},
+      {"option": "TypeScript", "pros": ["Type safety", "Better IDE"], "cons": ["Learning curve"]}
+    ],
+    "decision_made": "Adopt TypeScript for all new projects starting Q1 2025",
+    "rationale": "Improved code quality and reduced runtime errors",
+    "decision_makers": ["uuid1", "uuid2"],
+    "stakeholders": ["uuid3", "uuid4"],
+    "implementation_date": "2025-01-15"
+  }'
+```
+
+---
+
+## 6. MONITORING & ALERTS
+
+### Create Monitoring Rule
+**Endpoint:** `POST /teams/:teamCode/monitoring-rules`
+
+```bash
+curl -X POST http://localhost:3000/api/team-lead/teams/TEAM00000001/monitoring-rules \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Overdue Task Alert",
+    "description": "Alert when tasks are overdue by more than 2 days",
+    "rule_type": "threshold",
+    "condition_sql": "task.due_date < NOW() - INTERVAL '\''2 days'\'' AND task.status != '\''done'\''",
+    "trigger_frequency": "daily",
+    "severity": "high",
+    "notification_channels": ["dashboard", "email"],
+    "notify_roles": ["team_lead", "assigned_member"],
+    "auto_actions": [
+      {"action": "escalate", "params": {"to": "project_manager"}}
+    ]
+  }'
+```
+
+**Response:**
+```json
+{
+  "id": "uuid",
+  "rule_code": "RULE00000001",
+  "team_id": "uuid",
+  "name": "Overdue Task Alert",
+  "rule_type": "threshold",
+  "trigger_frequency": "daily",
+  "severity": "high",
+  "notification_channels": ["dashboard", "email"],
+  "is_active": true,
+  "created_at": "2025-01-10T10:00:00Z"
+}
+```
+
+**Rule Types:** `threshold` | `trend` | `anomaly` | `schedule` | `dependency`
+**Trigger Frequency:** `real_time` | `hourly` | `daily` | `weekly`
+**Severity Levels:** `low` | `medium` | `high` | `critical`
+
+### Get Recent Alerts
+**Endpoint:** `GET /teams/:teamCode/alerts?days=7`
+
+```bash
+curl -X GET "http://localhost:3000/api/team-lead/teams/TEAM00000001/alerts?days=7" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+**Response:**
+```json
+{
+  "alerts": [
+    {
+      "id": "uuid",
+      "alert_code": "ALRT00000001",
+      "rule_id": "uuid",
+      "title": "Task TASK00000015 is overdue",
+      "message": "Task 'Implement user auth' is 3 days overdue",
+      "severity": "high",
+      "status": "active",
+      "triggered_at": "2025-01-10T08:00:00Z",
+      "triggered_by_entity_type": "task",
+      "triggered_by_entity_id": "uuid",
+      "context_data": {
+        "task_code": "TASK00000015",
+        "assigned_to": "John Doe",
+        "days_overdue": 3
+      }
+    }
+  ],
+  "summary": {
+    "total": 5,
+    "by_severity": {"critical": 0, "high": 2, "medium": 2, "low": 1},
+    "by_status": {"active": 3, "acknowledged": 1, "resolved": 1}
+  }
+}
+```
+
+### Acknowledge Alert
+**Endpoint:** `PUT /alerts/:alertCode/acknowledge`
+
+```bash
+curl -X PUT http://localhost:3000/api/team-lead/alerts/ALRT00000001/acknowledge \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### Resolve Alert
+**Endpoint:** `PUT /alerts/:alertCode/resolve`
+
+```bash
+curl -X PUT http://localhost:3000/api/team-lead/alerts/ALRT00000001/resolve \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "resolution_notes": "Task completed and deployed"
+  }'
+```
+
+---
+
+## 7. RISK MANAGEMENT
+
+### Create Team Risk
+**Endpoint:** `POST /teams/:teamCode/risks`
+
+```bash
+curl -X POST http://localhost:3000/api/team-lead/teams/TEAM00000001/risks \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Key developer leaving",
+    "description": "Senior developer John may leave in Q2",
+    "risk_category": "resource",
+    "probability": 0.6,
+    "impact": "high",
+    "owner_id": "uuid",
+    "mitigation_plan": "Cross-train team members on critical systems",
+    "mitigation_actions": [
+      {"action": "Document all systems", "due_date": "2025-02-01", "status": "pending"},
+      {"action": "Pair programming sessions", "due_date": "2025-02-15", "status": "pending"}
+    ],
+    "contingency_plan": "Hire contractor if needed",
+    "target_resolution_date": "2025-03-01"
+  }'
+```
+
+**Response:**
+```json
+{
+  "id": "uuid",
+  "risk_code": "RISK00000001",
+  "team_id": "uuid",
+  "title": "Key developer leaving",
+  "risk_category": "resource",
+  "probability": 0.6,
+  "impact": "high",
+  "risk_score": 7.2,
+  "current_status": "identified",
+  "mitigation_plan": "Cross-train team members on critical systems",
+  "mitigation_actions": [...],
+  "identified_date": "2025-01-10",
+  "created_at": "2025-01-10T10:00:00Z"
+}
+```
+
+**Risk Categories:** `technical` | `operational` | `resource` | `schedule` | `quality` | `external`
+**Impact Levels:** `low` | `medium` | `high` | `critical`
+**Risk Score:** Calculated as `probability × impact_weight × 2.5` (0-10 scale)
+
+### Get Active Risks
+**Endpoint:** `GET /teams/:teamCode/risks`
+
+```bash
+curl -X GET http://localhost:3000/api/team-lead/teams/TEAM00000001/risks \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+**Response:**
+```json
+{
+  "risks": [
+    {
+      "id": "uuid",
+      "risk_code": "RISK00000001",
+      "title": "Key developer leaving",
+      "risk_category": "resource",
+      "probability": 0.6,
+      "impact": "high",
+      "risk_score": 7.2,
+      "current_status": "mitigating",
+      "owner_id": "uuid",
+      "target_resolution_date": "2025-03-01",
+      "next_review_date": "2025-01-20"
+    }
+  ],
+  "summary": {
+    "total": 3,
+    "by_category": {"resource": 1, "technical": 1, "schedule": 1},
+    "high_risk_count": 1,
+    "average_risk_score": 5.2
+  }
+}
+```
+
+**UI Components:**
+- Risk Matrix (Probability vs Impact grid)
+- Risk List with severity indicators
+- Mitigation Progress Tracker
+- Risk Score Trend Chart
+
+---
+
+## 8. PERFORMANCE FLAGS
+
+### Flag Performance Issue
+**Endpoint:** `POST /members/:userCode/flags`
+
+```bash
+curl -X POST http://localhost:3000/api/team-lead/members/USER00000001/flags \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "flag_type": "performance_decline",
+    "severity": "medium",
+    "title": "Declining task completion rate",
+    "description": "Task completion rate dropped from 90% to 65% over last 2 weeks",
+    "evidence": [
+      "Missed 3 deadlines in last 2 weeks",
+      "Story points completed dropped by 40%"
+    ],
+    "metrics_data": {
+      "previous_completion_rate": 90,
+      "current_completion_rate": 65,
+      "period": "2 weeks"
+    },
+    "action_plan": "Schedule 1:1 to discuss blockers",
+    "target_resolution_date": "2025-01-31"
+  }'
+```
+
+**Response:**
+```json
+{
+  "id": "uuid",
+  "flag_code": "FLAG00000001",
+  "user_id": "uuid",
+  "team_id": "uuid",
+  "flag_type": "performance_decline",
+  "severity": "medium",
+  "title": "Declining task completion rate",
+  "description": "...",
+  "evidence": [...],
+  "metrics_data": {...},
+  "flagged_by": "uuid",
+  "flagged_date": "2025-01-10",
+  "status": "active",
+  "action_plan": "Schedule 1:1 to discuss blockers",
+  "escalation_level": 1,
+  "created_at": "2025-01-10T10:00:00Z"
+}
+```
+
+**Flag Types:**
+- `performance_decline` - Declining metrics
+- `quality_issues` - Code quality problems
+- `attendance_issues` - Attendance/availability problems
+- `collaboration_problems` - Team collaboration issues
+- `skill_gap` - Missing required skills
+- `overload` - Consistently overworked
+- `disengagement` - Signs of disengagement
+
+**Flag Status Flow:**
+`active` → `investigating` → `action_plan` → `monitoring` → `resolved`
+
+### Get Active Flags
+**Endpoint:** `GET /teams/:teamCode/flags`
+
+```bash
+curl -X GET http://localhost:3000/api/team-lead/teams/TEAM00000001/flags \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+---
+
+## 9. TASK TEMPLATES
+
+### Create Task Template
+**Endpoint:** `POST /teams/:teamCode/task-templates`
+
+```bash
+curl -X POST http://localhost:3000/api/team-lead/teams/TEAM00000001/task-templates \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Bug Fix Template",
+    "category": "bug",
+    "title_pattern": "[BUG] {summary}",
+    "description_pattern": "## Description\n{description}\n\n## Steps to Reproduce\n{steps}\n\n## Expected Behavior\n{expected}",
+    "default_task_type": "bug",
+    "default_complexity": "medium",
+    "default_estimated_hours": 4,
+    "default_priority": 2,
+    "subtask_templates": [
+      {"title": "Investigate root cause", "estimated_hours": 1},
+      {"title": "Implement fix", "estimated_hours": 2},
+      {"title": "Write tests", "estimated_hours": 1}
+    ],
+    "default_acceptance_criteria": [
+      "Bug is fixed and verified",
+      "No regression in related features",
+      "Tests added for the fix"
+    ],
+    "default_tags": ["bug", "fix"]
+  }'
+```
+
+---
+
+## Error Handling
+
+All endpoints return consistent error responses:
+
+```json
+{
+  "error": {
+    "message": "Human-readable error message",
+    "code": "ERROR_CODE",
+    "details": {}
+  }
+}
+```
+
+**Common Error Codes:**
+| Code | HTTP Status | Description |
+|------|-------------|-------------|
+| `UNAUTHORIZED` | 401 | Missing or invalid token |
+| `FORBIDDEN` | 403 | Not authorized for this action |
+| `NOT_FOUND` | 404 | Resource not found |
+| `VALIDATION_ERROR` | 400 | Invalid request data |
+| `CONFLICT` | 409 | Resource conflict (e.g., duplicate) |
+| `INTERNAL_ERROR` | 500 | Server error |
+
+
+---
+
+## Dashboard UI Component Recommendations
+
+### 1. Main Dashboard Layout
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Team Health Score    │  Quick Stats (6 cards)              │
+│  [Circular Gauge]     │  ┌────┐ ┌────┐ ┌────┐              │
+│                       │  │ 24 │ │  2 │ │  1 │              │
+│  Score: 85            │  │Task│ │Over│ │Blck│              │
+│  Status: Good         │  └────┘ └────┘ └────┘              │
+└─────────────────────────────────────────────────────────────┘
+│                                                             │
+│  ┌─────────────────────┐  ┌─────────────────────┐          │
+│  │ Active Sprints      │  │ Recent Alerts       │          │
+│  │ - Sprint 24 (75%)   │  │ ⚠ Task overdue     │          │
+│  │ - Sprint 25 (Plan)  │  │ ⚠ Risk escalated   │          │
+│  └─────────────────────┘  └─────────────────────┘          │
+│                                                             │
+│  ┌─────────────────────┐  ┌─────────────────────┐          │
+│  │ Team Members        │  │ Action Items        │          │
+│  │ 👤 John (Normal)    │  │ □ Review alert      │          │
+│  │ 👤 Jane (Overload)  │  │ □ Update risk plan  │          │
+│  └─────────────────────┘  └─────────────────────┘          │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 2. Color Coding Standards
+
+**Health/Status Colors:**
+- `good` / `normal`: `#28a745` (Green)
+- `at_risk` / `overloaded`: `#ffc107` (Yellow)
+- `critical`: `#dc3545` (Red)
+
+**Severity Colors:**
+- `low`: `#28a745` (Green)
+- `medium`: `#ffc107` (Yellow)
+- `high`: `#fd7e14` (Orange)
+- `critical`: `#dc3545` (Red)
+
+**Performance Tier Colors:**
+- `Tier 1`: `#28a745` (Green)
+- `Tier 2`: `#17a2b8` (Blue)
+- `Tier 3`: `#6c757d` (Gray)
+- `Tier 4`: `#ffc107` (Yellow)
+- `Tier 5`: `#dc3545` (Red)
+
+### 3. Recommended Chart Libraries
+- **Burndown Charts**: Chart.js or Recharts (Line chart)
+- **Workload Distribution**: Chart.js (Bar chart)
+- **Risk Matrix**: Custom D3.js or Recharts (Scatter plot)
+- **Skill Gap Radar**: Chart.js (Radar chart)
+- **Performance Trends**: Recharts (Area chart)
+
+### 4. Real-time Updates
+Consider implementing WebSocket connections for:
+- Alert notifications
+- Task status changes
+- Team member availability updates
+
+---
+
+## TypeScript Interfaces
+
+```typescript
+// Team Dashboard Response
+interface TeamDashboard {
+  team: {
+    id: string;
+    team_code: string;
+    name: string;
+    member_count: number;
+  };
+  team_health: {
+    score: number;
+    status: 'good' | 'at_risk' | 'critical';
+    factors: string[];
+  };
+  quick_stats: {
+    active_sprints: number;
+    active_tasks: number;
+    overdue_tasks: number;
+    blocked_tasks: number;
+    active_alerts: number;
+    high_risk_items: number;
+  };
+  team_members: TeamMember[];
+  active_sprints: Sprint[];
+  recent_alerts: Alert[];
+  active_risks: Risk[];
+  upcoming_milestones: Milestone[];
+  action_items: ActionItem[];
+}
+
+// Workload Status
+type WorkloadStatus = 'underutilized' | 'normal' | 'optimal' | 'overloaded' | 'critical';
+
+// Alert Severity
+type Severity = 'low' | 'medium' | 'high' | 'critical';
+
+// Performance Tier
+type PerformanceTier = 'Tier 1' | 'Tier 2' | 'Tier 3' | 'Tier 4' | 'Tier 5';
+```
+
+---
+
+## API Rate Limits
+
+| Endpoint Type | Rate Limit |
+|--------------|------------|
+| Dashboard (GET) | 60 requests/minute |
+| Create/Update | 30 requests/minute |
+| Bulk Operations | 10 requests/minute |
+
+---
+
+## Pagination
+
+List endpoints support pagination:
+
+```bash
+GET /teams/:teamCode/tasks?page=1&limit=20&sort=created_at&order=desc
+```
+
+**Response includes:**
+```json
+{
+  "data": [...],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 150,
+    "total_pages": 8
+  }
+}
+```
+
+---
+
+## Contact
+
+For API issues or questions, contact the backend team.
+
+
+---
+
+## Complete API Endpoint Reference
+
+### Dashboard & Overview
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/teams/:teamCode/dashboard` | Complete team dashboard |
+
+### Sprint Management
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/sprints` | Create new sprint |
+| GET | `/sprints/:sprintCode/dashboard` | Sprint dashboard with metrics |
+
+### Task Management
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/teams/:teamCode/tasks` | Create task |
+| GET | `/teams/:teamCode/tasks` | List team tasks |
+| GET | `/tasks/:taskCode` | Get task details |
+| PUT | `/tasks/:taskCode` | Update task |
+| DELETE | `/tasks/:taskCode` | Delete task |
+| PUT | `/tasks/:taskCode/assign` | Assign task |
+| PUT | `/tasks/:taskCode/status` | Update task status |
+| POST | `/teams/:teamCode/task-templates` | Create task template |
+
+### Resource & Workload
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/teams/:teamCode/workload` | Team workload analysis |
+| POST | `/teams/:teamCode/capacity-plans` | Create capacity plan |
+| POST | `/teams/:teamCode/skill-gap-analysis` | Perform skill gap analysis |
+
+### Performance Management
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/members/:userCode/performance` | Member performance dashboard |
+| POST | `/members/:userCode/goals` | Create performance goal |
+| POST | `/members/:userCode/feedback-requests` | Create 360 feedback request |
+| GET | `/teams/:teamCode/performance` | Team performance overview |
+| GET | `/teams/:teamCode/metrics` | Team metrics |
+
+### Communication
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/teams/:teamCode/announcements` | Create announcement |
+| POST | `/members/:userCode/one-on-ones` | Schedule one-on-one |
+| POST | `/teams/:teamCode/decisions` | Log team decision |
+
+### Monitoring & Alerts
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/teams/:teamCode/monitoring-rules` | List monitoring rules |
+| POST | `/teams/:teamCode/monitoring-rules` | Create monitoring rule |
+| GET | `/teams/:teamCode/alerts?days=7` | Get recent alerts |
+| PUT | `/alerts/:alertCode/acknowledge` | Acknowledge alert |
+| PUT | `/alerts/:alertCode/resolve` | Resolve alert |
+
+### Risk Management
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/teams/:teamCode/risks` | List active risks |
+| POST | `/teams/:teamCode/risks` | Create team risk |
+
+### Performance Flags
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/teams/:teamCode/flags` | List performance flags |
+| POST | `/members/:userCode/flags` | Flag performance issue |
+
+### Observations
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/teams/:teamCode/members/:userCode/observations` | Create observation |
+| GET | `/teams/:teamCode/members/:userCode/observations` | List member observations |
+| GET | `/observations/:observationCode` | Get observation details |
+| PUT | `/observations/:observationCode` | Update observation |
+| DELETE | `/observations/:observationCode` | Delete observation |
+
+### GitHub Integration
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/teams/:teamCode/github/repository` | Link GitHub repository |
+| GET | `/teams/:teamCode/git-activity` | Team git activity |
+| GET | `/teams/:teamCode/members/:userCode/git-activity` | Member git activity |
+
+---
+
+## Quick Start for Frontend Developers
+
+### 1. Authentication Setup
+```javascript
+// Store token after login
+const token = response.data.token;
+localStorage.setItem('authToken', token);
+
+// Create axios instance with auth
+const api = axios.create({
+  baseURL: 'http://localhost:3000/api/team-lead',
+  headers: {
+    'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+    'Content-Type': 'application/json'
+  }
+});
+```
+
+### 2. Load Dashboard on Mount
+```javascript
+// React example
+useEffect(() => {
+  const loadDashboard = async () => {
+    const { data } = await api.get(`/teams/${teamCode}/dashboard`);
+    setDashboard(data);
+  };
+  loadDashboard();
+}, [teamCode]);
+```
+
+### 3. Handle Errors
+```javascript
+api.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response?.status === 401) {
+      // Redirect to login
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+```
+
+---
+
+## Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0.0 | 2025-01-10 | Initial release with all team lead endpoints |

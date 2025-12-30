@@ -41,8 +41,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { TeamLeadLayout } from "@/components/layouts/TeamLeadLayout";
-import { useMyTeams } from "@/hooks/useEmployee";
 import {
+  useMyTeams,
   useTeamPerformance,
   useMemberObservations,
   useCreateObservation,
@@ -102,10 +102,10 @@ const FeedbackPage = () => {
   }, [teamPerformance]);
 
   // Get observations for all members (we'll fetch for the first member or selected member)
-  const memberCodeToFetch = filterMemberCode !== "all" 
-    ? filterMemberCode 
+  const memberCodeToFetch = filterMemberCode !== "all"
+    ? filterMemberCode
     : (selectedMemberCode || (memberActivityData.length > 0 ? memberActivityData[0].userCode : ""));
-  
+
   const { data: observationsData, isLoading: isLoadingObservations } = useMemberObservations(
     teamCode || "",
     memberCodeToFetch,
@@ -120,7 +120,7 @@ const FeedbackPage = () => {
   // Filter observations
   const filteredObservations = useMemo(() => {
     if (!observationsData?.observations) return [];
-    
+
     let filtered = observationsData.observations;
 
     // Search filter
@@ -486,8 +486,8 @@ const FeedbackPage = () => {
                               observation.rating === "positive"
                                 ? "default"
                                 : observation.rating === "neutral"
-                                ? "secondary"
-                                : "destructive"
+                                  ? "secondary"
+                                  : "destructive"
                             }
                             className="text-xs"
                           >
@@ -653,5 +653,6 @@ const FeedbackPage = () => {
 };
 
 export default FeedbackPage;
+
 
 

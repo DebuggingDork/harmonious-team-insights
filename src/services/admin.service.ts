@@ -12,6 +12,10 @@ import type {
   PromoteToAdminResponse,
   BlockUserResponse,
   UnblockUserResponse,
+  BulkApproveUserRequest,
+  BulkApproveUserResponse,
+  BulkRejectUserRequest,
+  BulkRejectUserResponse,
   Plugin,
   UpdatePluginRequest,
   GitHubConnectResponse,
@@ -81,6 +85,22 @@ export const blockUser = async (id: string): Promise<BlockUserResponse> => {
  */
 export const unblockUser = async (id: string): Promise<UnblockUserResponse> => {
   const response = await apiClient.post<UnblockUserResponse>(ENDPOINTS.ADMIN.USERS.UNBLOCK(id));
+  return response.data;
+};
+
+/**
+ * Bulk approve users
+ */
+export const bulkApproveUsers = async (data: BulkApproveUserRequest): Promise<BulkApproveUserResponse> => {
+  const response = await apiClient.post<BulkApproveUserResponse>(ENDPOINTS.ADMIN.USERS.BULK_APPROVE, data);
+  return response.data;
+};
+
+/**
+ * Bulk reject users
+ */
+export const bulkRejectUsers = async (data: BulkRejectUserRequest): Promise<BulkRejectUserResponse> => {
+  const response = await apiClient.post<BulkRejectUserResponse>(ENDPOINTS.ADMIN.USERS.BULK_REJECT, data);
   return response.data;
 };
 

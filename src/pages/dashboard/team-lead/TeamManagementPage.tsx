@@ -27,8 +27,8 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { TeamLeadLayout } from "@/components/layouts/TeamLeadLayout";
-import { useMyTeams } from "@/hooks/useEmployee";
 import {
+  useMyTeams,
   useTeamMetrics,
   useTeamPerformance,
   useTeamGitActivity,
@@ -124,9 +124,9 @@ const TeamManagementPage = () => {
     return {
       name: team.name || "Team",
       project: team.project_name || "Project",
-      size: teamPerformance?.members_summary?.total_members || 0,
+      size: team.member_count || team.members?.length || teamPerformance?.members_summary?.total_members || 0,
       status: "Active",
-      repository: teamMetrics?.github_repository || null,
+      repository: team.github_repository || teamMetrics?.github_repository || null,
     };
   }, [team, teamPerformance, teamMetrics]);
 
@@ -425,5 +425,6 @@ const TeamManagementPage = () => {
 };
 
 export default TeamManagementPage;
+
 
 
