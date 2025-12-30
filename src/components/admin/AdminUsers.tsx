@@ -16,7 +16,8 @@ import {
   CheckCircle,
   CheckSquare,
   Square,
-  X
+  X,
+  Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -55,7 +56,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useAllUsers, useBlockUser, useUnblockUser, useBulkApproveUsers, useBulkRejectUsers } from "@/hooks/useAdmin";
+import { useAllUsers, useBlockUser, useUnblockUser, useBulkApproveUsers, useBulkRejectUsers, useDeleteUser, useBulkDeleteUsers } from "@/hooks/useAdmin";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import type { UserRole } from "@/api/types";
@@ -66,13 +67,18 @@ const AdminUsers = () => {
   const unblockUserMutation = useUnblockUser();
   const bulkApproveMutation = useBulkApproveUsers();
   const bulkRejectMutation = useBulkRejectUsers();
+  const deleteUserMutation = useDeleteUser();
+  const bulkDeleteMutation = useBulkDeleteUsers();
   
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isBlockDialogOpen, setIsBlockDialogOpen] = useState(false);
   const [isUnblockDialogOpen, setIsUnblockDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [isBulkMode, setIsBulkMode] = useState(false);
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
   const [isBulkApproveDialogOpen, setIsBulkApproveDialogOpen] = useState(false);
   const [isBulkRejectDialogOpen, setIsBulkRejectDialogOpen] = useState(false);
@@ -122,6 +128,65 @@ const AdminUsers = () => {
     }
   };
 
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
+
+    try {
+      await deleteUserMutation.mutateAsync(selectedUser.id);
+      toast({
+        title: "User Deleted",
+        description: `${selectedUser.full_name} has been deleted successfully`,
+      });
+      setIsDeleteDialogOpen(false);
+      setSelectedUser(null);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error?.response?.data?.message || "Failed to delete user",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedUserIds.size === 0) {
+      toast({
+        title: "No users selected",
+        description: "Please select at least one user to delete",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const result = await bulkDeleteMutation.mutateAsync({
+        user_ids: Array.from(selectedUserIds),
+      });
+      
+      setBulkOperationResult(result);
+      setIsBulkDeleteDialogOpen(false);
+      setIsResultDialogOpen(true);
+      setSelectedUserIds(new Set());
+      setIsBulkMode(false);
+      
+      toast({
+        title: "Bulk Deletion Complete",
+        description: `Deleted ${result.total_deleted} of ${result.total_requested} users`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete users",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const openDeleteDialog = (user: any) => {
+    setSelectedUser(user);
+    setIsDeleteDialogOpen(true);
+  };
+
   const openBlockDialog = (user: any) => {
     setSelectedUser(user);
     setIsBlockDialogOpen(true);
@@ -147,6 +212,20 @@ const AdminUsers = () => {
     return filteredUsers.filter(user => user.status === "pending");
   }, [filteredUsers]);
 
+  // Get deletable users (all except admins)
+  const deletableUsers = useMemo(() => {
+    return filteredUsers.filter(user => user.role !== "admin");
+  }, [filteredUsers]);
+
+  // Toggle bulk mode
+  const handleToggleBulkMode = () => {
+    setIsBulkMode(!isBulkMode);
+    if (isBulkMode) {
+      // Clear selections when exiting bulk mode
+      setSelectedUserIds(new Set());
+    }
+  };
+
   // Select all pending users
   const handleSelectAll = () => {
     if (selectedUserIds.size === pendingUsers.length) {
@@ -156,8 +235,21 @@ const AdminUsers = () => {
     }
   };
 
+  // Select all deletable users (for delete)
+  const handleSelectAllDeletable = () => {
+    if (selectedUserIds.size === deletableUsers.length) {
+      setSelectedUserIds(new Set());
+    } else {
+      setSelectedUserIds(new Set(deletableUsers.map(u => u.id)));
+    }
+  };
+
   // Toggle individual user selection
-  const handleToggleUser = (userId: string) => {
+  const handleToggleUser = (userId: string, userRole?: string) => {
+    if (!isBulkMode) return; // Only allow selection in bulk mode
+    // Don't allow selecting admin users
+    if (userRole === "admin") return;
+    
     const newSelected = new Set(selectedUserIds);
     if (newSelected.has(userId)) {
       newSelected.delete(userId);
@@ -191,6 +283,7 @@ const AdminUsers = () => {
       setSelectedUserIds(new Set());
       setBulkApproveRole("employee");
       setBulkApproveDepartmentId("");
+      setIsBulkMode(false); // Exit bulk mode after operation
       
       toast({
         title: "Bulk Approval Complete",
@@ -227,6 +320,7 @@ const AdminUsers = () => {
       setIsResultDialogOpen(true);
       setSelectedUserIds(new Set());
       setBulkRejectReason("");
+      setIsBulkMode(false); // Exit bulk mode after operation
       
       toast({
         title: "Bulk Rejection Complete",
@@ -337,55 +431,126 @@ const AdminUsers = () => {
         ))}
       </div>
 
-      {/* Bulk Actions */}
-      {pendingUsers.length > 0 && (
-        <div className="bg-card border border-border rounded-xl p-4">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-4">
+      {/* Bulk Actions Bar */}
+      {(pendingUsers.length > 0 || deletableUsers.length > 0) && (
+        <div className={`bg-card border border-border rounded-xl p-4 transition-all ${isBulkMode ? 'ring-2 ring-primary' : ''}`}>
+          {!isBulkMode ? (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {pendingUsers.length > 0 && (
+                  <Badge variant="secondary" className="text-sm">
+                    {pendingUsers.length} pending {pendingUsers.length === 1 ? 'user' : 'users'}
+                  </Badge>
+                )}
+              </div>
               <Button
-                variant="outline"
+                variant="default"
                 size="sm"
-                onClick={handleSelectAll}
+                onClick={handleToggleBulkMode}
                 className="flex items-center gap-2"
               >
-                {selectedUserIds.size === pendingUsers.length ? (
-                  <CheckSquare className="h-4 w-4" />
-                ) : (
-                  <Square className="h-4 w-4" />
-                )}
-                {selectedUserIds.size === pendingUsers.length ? "Deselect All" : "Select All Pending"}
+                <CheckSquare className="h-4 w-4" />
+                Select Users
               </Button>
-              {selectedUserIds.size > 0 && (
-                <Badge variant="secondary">
-                  {selectedUserIds.size} selected
-                </Badge>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="flex items-center gap-4">
+                  {pendingUsers.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSelectAll}
+                      className="flex items-center gap-2"
+                    >
+                      {selectedUserIds.size === pendingUsers.length ? (
+                        <CheckSquare className="h-4 w-4" />
+                      ) : (
+                        <Square className="h-4 w-4" />
+                      )}
+                      {selectedUserIds.size === pendingUsers.length ? "Deselect All Pending" : "Select All Pending"}
+                    </Button>
+                  )}
+                  {deletableUsers.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSelectAllDeletable}
+                      className="flex items-center gap-2"
+                    >
+                      {selectedUserIds.size === deletableUsers.length ? (
+                        <CheckSquare className="h-4 w-4" />
+                      ) : (
+                        <Square className="h-4 w-4" />
+                      )}
+                      {selectedUserIds.size === deletableUsers.length ? "Deselect All" : "Select All (Non-Admin)"}
+                    </Button>
+                  )}
+                  {selectedUserIds.size > 0 && (
+                    <Badge variant="default" className="text-sm">
+                      {selectedUserIds.size} {selectedUserIds.size === 1 ? 'user' : 'users'} selected
+                    </Badge>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleToggleBulkMode}
+                    className="flex items-center gap-2 text-muted-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                    Cancel
+                  </Button>
+                </div>
+                {selectedUserIds.size > 0 && (
+                  <div className="flex items-center gap-2">
+                    {Array.from(selectedUserIds).some(id => {
+                      const user = filteredUsers.find(u => u.id === id);
+                      return user?.status === "pending";
+                    }) && (
+                      <>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => setIsBulkApproveDialogOpen(true)}
+                          className="flex items-center gap-2"
+                          disabled={bulkApproveMutation.isPending}
+                        >
+                          <UserCheck className="h-4 w-4" />
+                          Approve ({selectedUserIds.size})
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setIsBulkRejectDialogOpen(true)}
+                          className="flex items-center gap-2"
+                          disabled={bulkRejectMutation.isPending}
+                        >
+                          <UserX className="h-4 w-4" />
+                          Reject ({selectedUserIds.size})
+                        </Button>
+                      </>
+                    )}
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => setIsBulkDeleteDialogOpen(true)}
+                      className="flex items-center gap-2"
+                      disabled={bulkDeleteMutation.isPending}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Delete ({selectedUserIds.size})
+                    </Button>
+                  </div>
+                )}
+              </div>
+              {selectedUserIds.size === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  Select users from the list below to perform bulk actions
+                </p>
               )}
             </div>
-            {selectedUserIds.size > 0 && (
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={() => setIsBulkApproveDialogOpen(true)}
-                  className="flex items-center gap-2"
-                  disabled={bulkApproveMutation.isPending}
-                >
-                  <UserCheck className="h-4 w-4" />
-                  Bulk Approve ({selectedUserIds.size})
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => setIsBulkRejectDialogOpen(true)}
-                  className="flex items-center gap-2"
-                  disabled={bulkRejectMutation.isPending}
-                >
-                  <UserX className="h-4 w-4" />
-                  Bulk Reject ({selectedUserIds.size})
-                </Button>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       )}
 
@@ -407,16 +572,22 @@ const AdminUsers = () => {
           </div>
         ) : (
           <div className="space-y-3">
-            {filteredUsers.map((user) => (
+            {filteredUsers.map((user) => {
+              const isSelected = isBulkMode && user.status === "pending" && selectedUserIds.has(user.id);
+              return (
               <div
                 key={user.id}
-                className="flex items-center justify-between p-4 bg-accent/50 rounded-lg hover:bg-accent transition-colors"
+                className={`flex items-center justify-between p-4 rounded-lg transition-colors ${
+                  isSelected 
+                    ? "bg-primary/10 border-2 border-primary" 
+                    : "bg-accent/50 hover:bg-accent"
+                }`}
               >
                 <div className="flex items-center gap-4">
-                  {user.status === "pending" && (
+                  {isBulkMode && user.role !== "admin" && (
                     <Checkbox
                       checked={selectedUserIds.has(user.id)}
-                      onCheckedChange={() => handleToggleUser(user.id)}
+                      onCheckedChange={() => handleToggleUser(user.id, user.role)}
                     />
                   )}
                   <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
@@ -476,11 +647,24 @@ const AdminUsers = () => {
                           Block User
                         </DropdownMenuItem>
                       ) : null}
+                      {user.role !== "admin" && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={() => openDeleteDialog(user)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete User
+                          </DropdownMenuItem>
+                        </>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         )}
       </div>
@@ -537,6 +721,38 @@ const AdminUsers = () => {
                 </>
               ) : (
                 "Unblock User"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete User Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete User</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to permanently delete {selectedUser?.full_name}? This action cannot be undone and will also remove the user from Neon Auth.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setSelectedUser(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteUser}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteUserMutation.isPending}
+            >
+              {deleteUserMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete User
+                </>
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -652,6 +868,43 @@ const AdminUsers = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Bulk Delete Dialog */}
+      <Dialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Bulk Delete Users</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to permanently delete {selectedUserIds.size} selected user(s)? This action cannot be undone and will also remove users from Neon Auth. Admin users cannot be deleted.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsBulkDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleBulkDelete}
+              disabled={bulkDeleteMutation.isPending}
+            >
+              {bulkDeleteMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete {selectedUserIds.size} User(s)
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Bulk Operation Result Dialog */}
       <Dialog open={isResultDialogOpen} onOpenChange={setIsResultDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
@@ -670,10 +923,14 @@ const AdminUsers = () => {
                 </div>
                 <div className="bg-emerald-500/10 p-3 rounded-lg">
                   <p className="text-sm text-emerald-600 dark:text-emerald-400">
-                    {bulkOperationResult.total_approved !== undefined ? "Approved" : "Rejected"}
+                    {bulkOperationResult.total_approved !== undefined ? "Approved" : 
+                     bulkOperationResult.total_rejected !== undefined ? "Rejected" : 
+                     bulkOperationResult.total_deleted !== undefined ? "Deleted" : "Processed"}
                   </p>
                   <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                    {bulkOperationResult.total_approved ?? bulkOperationResult.total_rejected}
+                    {bulkOperationResult.total_approved ?? 
+                     bulkOperationResult.total_rejected ?? 
+                     bulkOperationResult.total_deleted ?? 0}
                   </p>
                 </div>
               </div>
@@ -703,11 +960,14 @@ const AdminUsers = () => {
                   </p>
                   <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 max-h-48 overflow-y-auto">
                     <div className="flex flex-wrap gap-2">
-                      {bulkOperationResult.approved.map((userId: string, index: number) => (
-                        <Badge key={index} variant="outline" className="text-emerald-600 dark:text-emerald-400">
-                          {userId.substring(0, 8)}...
-                        </Badge>
-                      ))}
+                      {bulkOperationResult.approved.map((userId: any, index: number) => {
+                        const userIdStr = typeof userId === 'string' ? userId : String(userId || '');
+                        return (
+                          <Badge key={index} variant="outline" className="text-emerald-600 dark:text-emerald-400">
+                            {userIdStr.length > 8 ? `${userIdStr.substring(0, 8)}...` : userIdStr}
+                          </Badge>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
@@ -720,11 +980,34 @@ const AdminUsers = () => {
                   </p>
                   <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 max-h-48 overflow-y-auto">
                     <div className="flex flex-wrap gap-2">
-                      {bulkOperationResult.rejected.map((userId: string, index: number) => (
-                        <Badge key={index} variant="outline" className="text-emerald-600 dark:text-emerald-400">
-                          {userId.substring(0, 8)}...
-                        </Badge>
-                      ))}
+                      {bulkOperationResult.rejected.map((userId: any, index: number) => {
+                        const userIdStr = typeof userId === 'string' ? userId : String(userId || '');
+                        return (
+                          <Badge key={index} variant="outline" className="text-emerald-600 dark:text-emerald-400">
+                            {userIdStr.length > 8 ? `${userIdStr.substring(0, 8)}...` : userIdStr}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {bulkOperationResult.deleted && bulkOperationResult.deleted.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                    Successfully Deleted ({bulkOperationResult.deleted.length})
+                  </p>
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 max-h-48 overflow-y-auto">
+                    <div className="flex flex-wrap gap-2">
+                      {bulkOperationResult.deleted.map((userId: any, index: number) => {
+                        const userIdStr = typeof userId === 'string' ? userId : String(userId || '');
+                        return (
+                          <Badge key={index} variant="outline" className="text-emerald-600 dark:text-emerald-400">
+                            {userIdStr.length > 8 ? `${userIdStr.substring(0, 8)}...` : userIdStr}
+                          </Badge>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>

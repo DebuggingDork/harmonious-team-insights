@@ -696,6 +696,29 @@ export interface BulkRejectUserResponse {
   total_failed: number;
 }
 
+export interface DeleteUserResponse {
+  message: string;
+  user_id: string;
+}
+
+export interface BulkDeleteUserRequest {
+  user_ids: string[];
+}
+
+export interface BulkDeleteUserError {
+  user_id: string;
+  error: string;
+}
+
+export interface BulkDeleteUserResponse {
+  message: string;
+  deleted: string[];
+  failed: BulkDeleteUserError[];
+  total_requested: number;
+  total_deleted: number;
+  total_failed: number;
+}
+
 // Employee Types
 export interface EmployeeProfile {
   id: string;

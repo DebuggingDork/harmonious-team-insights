@@ -16,6 +16,9 @@ import type {
   BulkApproveUserResponse,
   BulkRejectUserRequest,
   BulkRejectUserResponse,
+  DeleteUserResponse,
+  BulkDeleteUserRequest,
+  BulkDeleteUserResponse,
   Plugin,
   UpdatePluginRequest,
   GitHubConnectResponse,
@@ -101,6 +104,22 @@ export const bulkApproveUsers = async (data: BulkApproveUserRequest): Promise<Bu
  */
 export const bulkRejectUsers = async (data: BulkRejectUserRequest): Promise<BulkRejectUserResponse> => {
   const response = await apiClient.post<BulkRejectUserResponse>(ENDPOINTS.ADMIN.USERS.BULK_REJECT, data);
+  return response.data;
+};
+
+/**
+ * Delete a user (hard delete)
+ */
+export const deleteUser = async (id: string): Promise<DeleteUserResponse> => {
+  const response = await apiClient.delete<DeleteUserResponse>(ENDPOINTS.ADMIN.USERS.DELETE(id));
+  return response.data;
+};
+
+/**
+ * Bulk delete users
+ */
+export const bulkDeleteUsers = async (data: BulkDeleteUserRequest): Promise<BulkDeleteUserResponse> => {
+  const response = await apiClient.post<BulkDeleteUserResponse>(ENDPOINTS.ADMIN.USERS.BULK_DELETE, data);
   return response.data;
 };
 

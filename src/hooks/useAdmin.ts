@@ -9,6 +9,7 @@ import type {
   PromoteToAdminRequest,
   BulkApproveUserRequest,
   BulkRejectUserRequest,
+  BulkDeleteUserRequest,
   UpdatePluginRequest,
 } from '@/api/types';
 import { handleError } from '@/utils/errorHandler';
@@ -149,6 +150,36 @@ export const useBulkRejectUsers = () => {
 
   return useMutation({
     mutationFn: (data: BulkRejectUserRequest) => adminService.bulkRejectUsers(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.users.all });
+    },
+    onError: handleError,
+  });
+};
+
+/**
+ * Delete user mutation
+ */
+export const useDeleteUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => adminService.deleteUser(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.users.all });
+    },
+    onError: handleError,
+  });
+};
+
+/**
+ * Bulk delete users mutation
+ */
+export const useBulkDeleteUsers = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: BulkDeleteUserRequest) => adminService.bulkDeleteUsers(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminKeys.users.all });
     },

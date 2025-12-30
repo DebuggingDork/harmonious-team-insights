@@ -22,6 +22,8 @@ export const ENDPOINTS = {
       PROMOTE_ADMIN: `${API_BASE}${API_PREFIX}/admin/users/promote-admin`,
       BULK_APPROVE: `${API_BASE}${API_PREFIX}/admin/users/bulk-approve`,
       BULK_REJECT: `${API_BASE}${API_PREFIX}/admin/users/bulk-reject`,
+      DELETE: (id: string) => `${API_BASE}${API_PREFIX}/admin/users/${id}`,
+      BULK_DELETE: `${API_BASE}${API_PREFIX}/admin/users/bulk-delete`,
     },
     PLUGINS: {
       LIST: `${API_BASE}${API_PREFIX}/admin/plugins`,

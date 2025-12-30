@@ -24,10 +24,14 @@ import {
   Moon,
   Plug,
   ChevronDown,
-  User
+  User,
+  CheckSquare,
+  Square,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Sheet,
@@ -49,10 +53,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import TeamTuneLogo from "@/components/TeamTuneLogo";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/contexts/ThemeContext";
-import { usePendingUsers, useAllUsers, useApproveUser, useRejectUser, useUnblockUser } from "@/hooks/useAdmin";
+import { usePendingUsers, useAllUsers, useApproveUser, useRejectUser, useUnblockUser, useBulkApproveUsers, useBulkRejectUsers } from "@/hooks/useAdmin";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import AdminUsers from "@/components/admin/AdminUsers";
@@ -72,9 +86,20 @@ const AdminDashboard = () => {
   const approveUserMutation = useApproveUser();
   const rejectUserMutation = useRejectUser();
   const unblockUserMutation = useUnblockUser();
+  const bulkApproveMutation = useBulkApproveUsers();
+  const bulkRejectMutation = useBulkRejectUsers();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isBulkMode, setIsBulkMode] = useState(false);
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
+  const [isBulkApproveDialogOpen, setIsBulkApproveDialogOpen] = useState(false);
+  const [isBulkRejectDialogOpen, setIsBulkRejectDialogOpen] = useState(false);
+  const [bulkApproveRole, setBulkApproveRole] = useState<UserRole>("employee");
+  const [bulkApproveDepartmentId, setBulkApproveDepartmentId] = useState<string>("");
+  const [bulkRejectReason, setBulkRejectReason] = useState<string>("");
+  const [bulkOperationResult, setBulkOperationResult] = useState<any>(null);
+  const [isResultDialogOpen, setIsResultDialogOpen] = useState(false);
   // Track selected role for each pending user
   const [userRoles, setUserRoles] = useState<Record<string, UserRole>>({});
 
@@ -114,6 +139,107 @@ const AdminDashboard = () => {
         });
       },
     });
+  };
+
+  // Bulk action handlers
+  const handleToggleBulkMode = () => {
+    setIsBulkMode(!isBulkMode);
+    if (isBulkMode) {
+      setSelectedUserIds(new Set());
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (selectedUserIds.size === pendingUsers.length) {
+      setSelectedUserIds(new Set());
+    } else {
+      setSelectedUserIds(new Set(pendingUsers.map(u => u.id)));
+    }
+  };
+
+  const handleToggleUser = (userId: string) => {
+    if (!isBulkMode) return;
+    const newSelected = new Set(selectedUserIds);
+    if (newSelected.has(userId)) {
+      newSelected.delete(userId);
+    } else {
+      newSelected.add(userId);
+    }
+    setSelectedUserIds(newSelected);
+  };
+
+  const handleBulkApprove = async () => {
+    if (selectedUserIds.size === 0) {
+      toast({
+        title: "No users selected",
+        description: "Please select at least one user to approve",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const result = await bulkApproveMutation.mutateAsync({
+        user_ids: Array.from(selectedUserIds),
+        role: bulkApproveRole,
+        department_id: bulkApproveDepartmentId || undefined,
+      });
+      
+      setBulkOperationResult(result);
+      setIsBulkApproveDialogOpen(false);
+      setIsResultDialogOpen(true);
+      setSelectedUserIds(new Set());
+      setBulkApproveRole("employee");
+      setBulkApproveDepartmentId("");
+      setIsBulkMode(false);
+      
+      toast({
+        title: "Bulk Approval Complete",
+        description: `Approved ${result.total_approved} of ${result.total_requested} users`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to approve users",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBulkReject = async () => {
+    if (selectedUserIds.size === 0) {
+      toast({
+        title: "No users selected",
+        description: "Please select at least one user to reject",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const result = await bulkRejectMutation.mutateAsync({
+        user_ids: Array.from(selectedUserIds),
+        reason: bulkRejectReason || undefined,
+      });
+      
+      setBulkOperationResult(result);
+      setIsBulkRejectDialogOpen(false);
+      setIsResultDialogOpen(true);
+      setSelectedUserIds(new Set());
+      setBulkRejectReason("");
+      setIsBulkMode(false);
+      
+      toast({
+        title: "Bulk Rejection Complete",
+        description: `Rejected ${result.total_rejected} of ${result.total_requested} users`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to reject users",
+        variant: "destructive",
+      });
+    }
   };
 
   // Calculate stats from real data
@@ -365,7 +491,7 @@ const AdminDashboard = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
-                className="bg-card border-2 border-warning/50 rounded-xl p-6 mb-8"
+                className={`bg-card border-2 border-warning/50 rounded-xl p-6 mb-8 transition-all ${isBulkMode ? 'ring-2 ring-primary' : ''}`}
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
@@ -377,10 +503,92 @@ const AdminDashboard = () => {
                       <p className="text-sm text-muted-foreground">Users awaiting your approval</p>
                     </div>
                   </div>
-                  <Badge variant="secondary" className="bg-warning/10 text-warning border-warning/20">
-                    {pendingUsers.length} pending
-                  </Badge>
+                  <div className="flex items-center gap-3">
+                    <Badge variant="secondary" className="bg-warning/10 text-warning border-warning/20">
+                      {pendingUsers.length} pending
+                    </Badge>
+                    {pendingUsers.length > 0 && (
+                      !isBulkMode ? (
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={handleToggleBulkMode}
+                          className="flex items-center gap-2"
+                        >
+                          <CheckSquare className="h-4 w-4" />
+                          Select Users
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleToggleBulkMode}
+                          className="flex items-center gap-2"
+                        >
+                          <X className="h-4 w-4" />
+                          Cancel
+                        </Button>
+                      )
+                    )}
+                  </div>
                 </div>
+
+                {/* Bulk Actions Bar */}
+                {isBulkMode && pendingUsers.length > 0 && (
+                  <div className="mb-4 p-4 bg-accent/50 rounded-lg border border-border">
+                    <div className="flex items-center justify-between flex-wrap gap-4">
+                      <div className="flex items-center gap-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleSelectAll}
+                          className="flex items-center gap-2"
+                        >
+                          {selectedUserIds.size === pendingUsers.length ? (
+                            <CheckSquare className="h-4 w-4" />
+                          ) : (
+                            <Square className="h-4 w-4" />
+                          )}
+                          {selectedUserIds.size === pendingUsers.length ? "Deselect All" : "Select All"}
+                        </Button>
+                        {selectedUserIds.size > 0 && (
+                          <Badge variant="default" className="text-sm">
+                            {selectedUserIds.size} {selectedUserIds.size === 1 ? 'user' : 'users'} selected
+                          </Badge>
+                        )}
+                      </div>
+                      {selectedUserIds.size > 0 && (
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => setIsBulkApproveDialogOpen(true)}
+                            className="flex items-center gap-2"
+                            disabled={bulkApproveMutation.isPending}
+                          >
+                            <UserCheck className="h-4 w-4" />
+                            Approve ({selectedUserIds.size})
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => setIsBulkRejectDialogOpen(true)}
+                            className="flex items-center gap-2"
+                            disabled={bulkRejectMutation.isPending}
+                          >
+                            <UserX className="h-4 w-4" />
+                            Reject ({selectedUserIds.size})
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                    {selectedUserIds.size === 0 && (
+                      <p className="text-sm text-muted-foreground mt-3">
+                        Select users from the list below to perform bulk actions
+                      </p>
+                    )}
+                  </div>
+                )}
                 
                 <div className="space-y-3">
                   {isLoadingPending ? (
@@ -390,12 +598,24 @@ const AdminDashboard = () => {
                   ) : pendingUsers.length === 0 ? (
                     <p className="text-center text-muted-foreground py-4">No pending approvals</p>
                   ) : (
-                    pendingUsers.map((pendingUser) => (
+                    pendingUsers.map((pendingUser) => {
+                      const isSelected = isBulkMode && selectedUserIds.has(pendingUser.id);
+                      return (
                       <div
                         key={pendingUser.id}
-                        className="flex items-center justify-between p-4 bg-accent/50 rounded-lg"
+                        className={`flex items-center justify-between p-4 rounded-lg transition-colors ${
+                          isSelected 
+                            ? "bg-primary/10 border-2 border-primary" 
+                            : "bg-accent/50"
+                        }`}
                       >
                         <div className="flex items-center gap-4">
+                          {isBulkMode && (
+                            <Checkbox
+                              checked={selectedUserIds.has(pendingUser.id)}
+                              onCheckedChange={() => handleToggleUser(pendingUser.id)}
+                            />
+                          )}
                           <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
                             <span className="text-sm font-medium text-primary">
                               {pendingUser.full_name.split(' ').map(n => n[0]).join('')}
@@ -410,44 +630,47 @@ const AdminDashboard = () => {
                           <span className="text-xs text-muted-foreground hidden sm:block">
                             Requested {pendingUser.created_at ? format(new Date(pendingUser.created_at), "MMM d, yyyy") : "N/A"}
                           </span>
-                          <div className="flex gap-2 items-center">
-                            <Select
-                              value={userRoles[pendingUser.id] || "employee"}
-                              onValueChange={(value) => handleRoleChange(pendingUser.id, value as UserRole)}
-                            >
-                              <SelectTrigger className="w-[140px] h-8 text-xs">
-                                <SelectValue placeholder="Select role" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="employee">Employee</SelectItem>
-                                <SelectItem value="team_lead">Team Lead</SelectItem>
-                                <SelectItem value="project_manager">Project Manager</SelectItem>
-                                <SelectItem value="admin">Admin</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                              onClick={() => handleReject(pendingUser.id)}
-                              disabled={rejectUserMutation.isPending}
-                            >
-                              <XCircle className="h-4 w-4 mr-1" />
-                              Reject
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              className="bg-primary hover:bg-primary/90"
-                              onClick={() => handleApprove(pendingUser.id)}
-                              disabled={approveUserMutation.isPending}
-                            >
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              Approve
-                            </Button>
-                          </div>
+                          {!isBulkMode && (
+                            <div className="flex gap-2 items-center">
+                              <Select
+                                value={userRoles[pendingUser.id] || "employee"}
+                                onValueChange={(value) => handleRoleChange(pendingUser.id, value as UserRole)}
+                              >
+                                <SelectTrigger className="w-[140px] h-8 text-xs">
+                                  <SelectValue placeholder="Select role" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="employee">Employee</SelectItem>
+                                  <SelectItem value="team_lead">Team Lead</SelectItem>
+                                  <SelectItem value="project_manager">Project Manager</SelectItem>
+                                  <SelectItem value="admin">Admin</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={() => handleReject(pendingUser.id)}
+                                disabled={rejectUserMutation.isPending}
+                              >
+                                <XCircle className="h-4 w-4 mr-1" />
+                                Reject
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                className="bg-primary hover:bg-primary/90"
+                                onClick={() => handleApprove(pendingUser.id)}
+                                disabled={approveUserMutation.isPending}
+                              >
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                Approve
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    ))
+                    );
+                    })
                   )}
                 </div>
               </motion.div>
@@ -565,11 +788,211 @@ const AdminDashboard = () => {
           {activeTab === "roles" && <AdminRoles />}
         </div>
 
-        {/* Notification Panel */}
-        <NotificationPanel 
-          isOpen={isNotificationPanelOpen} 
-          onClose={() => setIsNotificationPanelOpen(false)} 
-        />
+      {/* Notification Panel */}
+      <NotificationPanel
+        isOpen={isNotificationPanelOpen}
+        onClose={() => setIsNotificationPanelOpen(false)}
+      />
+
+      {/* Bulk Approve Dialog */}
+      <Dialog open={isBulkApproveDialogOpen} onOpenChange={setIsBulkApproveDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Bulk Approve Users</DialogTitle>
+            <DialogDescription>
+              Approve {selectedUserIds.size} selected user(s). You can optionally set a role and department for all users.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Role (optional)</label>
+              <Select value={bulkApproveRole} onValueChange={(value) => setBulkApproveRole(value as UserRole)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="employee">Employee</SelectItem>
+                  <SelectItem value="team_lead">Team Lead</SelectItem>
+                  <SelectItem value="project_manager">Project Manager</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Defaults to "employee" if not specified</p>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Department ID (optional)</label>
+              <Input
+                placeholder="Enter department ID"
+                value={bulkApproveDepartmentId}
+                onChange={(e) => setBulkApproveDepartmentId(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsBulkApproveDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleBulkApprove}
+              disabled={bulkApproveMutation.isPending}
+            >
+              {bulkApproveMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Approving...
+                </>
+              ) : (
+                <>
+                  <UserCheck className="h-4 w-4 mr-2" />
+                  Approve {selectedUserIds.size} User(s)
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Reject Dialog */}
+      <Dialog open={isBulkRejectDialogOpen} onOpenChange={setIsBulkRejectDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Bulk Reject Users</DialogTitle>
+            <DialogDescription>
+              Reject {selectedUserIds.size} selected user(s). You can optionally provide a reason for rejection.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Reason (optional)</label>
+              <Textarea
+                placeholder="Enter rejection reason..."
+                value={bulkRejectReason}
+                onChange={(e) => setBulkRejectReason(e.target.value)}
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsBulkRejectDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleBulkReject}
+              disabled={bulkRejectMutation.isPending}
+            >
+              {bulkRejectMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Rejecting...
+                </>
+              ) : (
+                <>
+                  <UserX className="h-4 w-4 mr-2" />
+                  Reject {selectedUserIds.size} User(s)
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Operation Result Dialog */}
+      <Dialog open={isResultDialogOpen} onOpenChange={setIsResultDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Bulk Operation Results</DialogTitle>
+            <DialogDescription>
+              Summary of the bulk operation
+            </DialogDescription>
+          </DialogHeader>
+          {bulkOperationResult && (
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-muted/50 p-3 rounded-lg">
+                  <p className="text-sm text-muted-foreground">Total Requested</p>
+                  <p className="text-2xl font-bold">{bulkOperationResult.total_requested}</p>
+                </div>
+                <div className="bg-emerald-500/10 p-3 rounded-lg">
+                  <p className="text-sm text-emerald-600 dark:text-emerald-400">
+                    {bulkOperationResult.total_approved !== undefined ? "Approved" : "Rejected"}
+                  </p>
+                  <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                    {bulkOperationResult.total_approved ?? bulkOperationResult.total_rejected}
+                  </p>
+                </div>
+              </div>
+              
+              {bulkOperationResult.failed && bulkOperationResult.failed.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-destructive">
+                    Failed ({bulkOperationResult.total_failed})
+                  </p>
+                  <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 max-h-48 overflow-y-auto">
+                    <div className="space-y-2">
+                      {bulkOperationResult.failed.map((failure: any, index: number) => (
+                        <div key={index} className="text-sm">
+                          <p className="font-medium text-destructive">User ID: {failure.user_id}</p>
+                          <p className="text-muted-foreground">{failure.error}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {bulkOperationResult.approved && bulkOperationResult.approved.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                    Successfully Approved ({bulkOperationResult.approved.length})
+                  </p>
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 max-h-48 overflow-y-auto">
+                    <div className="flex flex-wrap gap-2">
+                      {bulkOperationResult.approved.map((userId: any, index: number) => {
+                        const userIdStr = typeof userId === 'string' ? userId : String(userId || '');
+                        return (
+                          <Badge key={index} variant="outline" className="text-emerald-600 dark:text-emerald-400">
+                            {userIdStr.length > 8 ? `${userIdStr.substring(0, 8)}...` : userIdStr}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {bulkOperationResult.rejected && bulkOperationResult.rejected.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                    Successfully Rejected ({bulkOperationResult.rejected.length})
+                  </p>
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 max-h-48 overflow-y-auto">
+                    <div className="flex flex-wrap gap-2">
+                      {bulkOperationResult.rejected.map((userId: any, index: number) => {
+                        const userIdStr = typeof userId === 'string' ? userId : String(userId || '');
+                        return (
+                          <Badge key={index} variant="outline" className="text-emerald-600 dark:text-emerald-400">
+                            {userIdStr.length > 8 ? `${userIdStr.substring(0, 8)}...` : userIdStr}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setIsResultDialogOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       </main>
 
       {/* Mobile Sidebar */}
