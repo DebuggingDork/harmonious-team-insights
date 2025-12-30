@@ -1,17 +1,17 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  Briefcase,
-  FolderKanban,
-  Calendar,
-  BarChart3,
+  Users,
+  MessageSquare,
+  CheckSquare,
+  User,
   Bell,
   Search,
   LogOut,
   Sun,
   Moon,
-  User,
   ChevronDown,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,7 +32,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
 
-interface ProjectManagerLayoutProps {
+interface TeamLeadLayoutProps {
   children: ReactNode;
   headerTitle?: string;
   headerDescription?: string;
@@ -47,38 +47,37 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   {
-    path: "/dashboard/project-manager",
+    path: "/dashboard/team-lead",
     label: "Overview",
     icon: BarChart3,
   },
   {
-    path: "/dashboard/project-manager/projects",
-    label: "Projects",
-    icon: FolderKanban,
+    path: "/dashboard/team-lead/tasks",
+    label: "Tasks",
+    icon: CheckSquare,
   },
   {
-    path: "/dashboard/project-manager/timeline",
-    label: "Timeline",
-    icon: Calendar,
+    path: "/dashboard/team-lead/feedback",
+    label: "Feedback",
+    icon: MessageSquare,
   },
   {
-    path: "/dashboard/project-manager/reports",
-    label: "Reports",
-    icon: BarChart3,
+    path: "/dashboard/team-lead/team",
+    label: "Team",
+    icon: Users,
   },
 ];
 
-export const ProjectManagerLayout = ({
+export const TeamLeadLayout = ({
   children,
   headerTitle,
   headerDescription,
   headerActions,
-}: ProjectManagerLayoutProps) => {
+}: TeamLeadLayoutProps) => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -96,10 +95,6 @@ export const ProjectManagerLayout = ({
     }
   };
 
-  const toggleNotifications = () => {
-    setNotificationsEnabled(!notificationsEnabled);
-  };
-
   // Extract user name from email for display
   const getUserNameFromEmail = (email: string) => {
     if (!email) return "User";
@@ -115,7 +110,7 @@ export const ProjectManagerLayout = ({
   const displayName = user?.full_name || getUserNameFromEmail(user?.email || "");
 
   const isActive = (path: string) => {
-    if (path === "/dashboard/project-manager") {
+    if (path === "/dashboard/team-lead") {
       return location.pathname === path;
     }
     return location.pathname.startsWith(path);
@@ -181,7 +176,7 @@ export const ProjectManagerLayout = ({
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
                   type="text"
-                  placeholder="Search projects..."
+                  placeholder="Search members..."
                   className="pl-10 pr-4 py-2 bg-accent border-none rounded-lg text-sm w-64 focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </div>
@@ -203,13 +198,9 @@ export const ProjectManagerLayout = ({
 
               {/* Notifications */}
               <button 
-                onClick={toggleNotifications}
                 className="relative p-2 text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Bell className="h-5 w-5" />
-                {notificationsEnabled && (
-                  <span className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full" />
-                )}
               </button>
 
               {/* Profile Menu */}
@@ -224,7 +215,7 @@ export const ProjectManagerLayout = ({
                         {displayName}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {user?.email || "Project Manager"}
+                        {user?.email || "Team Lead"}
                       </p>
                     </div>
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -232,7 +223,7 @@ export const ProjectManagerLayout = ({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuItem 
-                    onClick={() => navigate("/dashboard/project-manager/profile")}
+                    onClick={() => navigate("/dashboard/team-lead/profile")}
                     className="flex items-center gap-2"
                   >
                     <User className="h-4 w-4" />
@@ -325,4 +316,3 @@ export const ProjectManagerLayout = ({
     </div>
   );
 };
-

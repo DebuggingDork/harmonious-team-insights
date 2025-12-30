@@ -1,13 +1,19 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  Briefcase,
-  FolderKanban,
-  Calendar,
+  Shield,
+  Users,
+  Settings,
   BarChart3,
   Bell,
   Search,
   LogOut,
+  UserCheck,
+  UserX,
+  Clock,
+  UserCog,
+  Building2,
+  Plug,
   Sun,
   Moon,
   User,
@@ -31,8 +37,9 @@ import TeamTuneLogo from "@/components/TeamTuneLogo";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
+import NotificationPanel from "@/components/admin/NotificationPanel";
 
-interface ProjectManagerLayoutProps {
+interface AdminLayoutProps {
   children: ReactNode;
   headerTitle?: string;
   headerDescription?: string;
@@ -43,42 +50,21 @@ interface NavItem {
   path: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
+  isButton?: boolean;
+  onClick?: () => void;
 }
 
-const navItems: NavItem[] = [
-  {
-    path: "/dashboard/project-manager",
-    label: "Overview",
-    icon: BarChart3,
-  },
-  {
-    path: "/dashboard/project-manager/projects",
-    label: "Projects",
-    icon: FolderKanban,
-  },
-  {
-    path: "/dashboard/project-manager/timeline",
-    label: "Timeline",
-    icon: Calendar,
-  },
-  {
-    path: "/dashboard/project-manager/reports",
-    label: "Reports",
-    icon: BarChart3,
-  },
-];
-
-export const ProjectManagerLayout = ({
+export const AdminLayout = ({
   children,
   headerTitle,
   headerDescription,
   headerActions,
-}: ProjectManagerLayoutProps) => {
+}: AdminLayoutProps) => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -88,38 +74,52 @@ export const ProjectManagerLayout = ({
 
   const handleLogoClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    // On mobile, open menu; on desktop, navigate to home
-    if (window.innerWidth < 1024) {
-      setIsMobileMenuOpen(true);
-    } else {
-      navigate("/");
-    }
+    navigate("/");
   };
-
-  const toggleNotifications = () => {
-    setNotificationsEnabled(!notificationsEnabled);
-  };
-
-  // Extract user name from email for display
-  const getUserNameFromEmail = (email: string) => {
-    if (!email) return "User";
-    
-    const namePart = email.split('@')[0];
-    const nameParts = namePart.split(/[._-]/).map(part => 
-      part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
-    );
-    
-    return nameParts.join(' ');
-  };
-
-  const displayName = user?.full_name || getUserNameFromEmail(user?.email || "");
 
   const isActive = (path: string) => {
-    if (path === "/dashboard/project-manager") {
+    if (path === "/dashboard/admin") {
       return location.pathname === path;
     }
     return location.pathname.startsWith(path);
   };
+
+  const navItems: NavItem[] = [
+    {
+      path: "/dashboard/admin",
+      label: "Dashboard",
+      icon: BarChart3,
+    },
+    {
+      path: "/dashboard/admin/users",
+      label: "Users",
+      icon: Users,
+      isButton: true,
+      onClick: () => navigate("/dashboard/admin"),
+    },
+    {
+      path: "/dashboard/admin/roles",
+      label: "Roles",
+      icon: UserCog,
+      isButton: true,
+      onClick: () => navigate("/dashboard/admin"),
+    },
+    {
+      path: "/dashboard/admin/departments",
+      label: "Departments",
+      icon: Building2,
+    },
+    {
+      path: "/dashboard/admin/settings",
+      label: "Settings",
+      icon: Settings,
+    },
+    {
+      path: "/dashboard/admin/plugins",
+      label: "Plugins",
+      icon: Plug,
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -134,6 +134,25 @@ export const ProjectManagerLayout = ({
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.path);
+              
+              if (item.isButton && item.onClick) {
+                return (
+                  <button
+                    key={item.path}
+                    onClick={item.onClick}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors",
+                      active
+                        ? "font-medium text-foreground bg-accent"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {item.label}
+                  </button>
+                );
+              }
+
               return (
                 <Link
                   key={item.path}
@@ -171,8 +190,8 @@ export const ProjectManagerLayout = ({
         <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div 
-                className="lg:hidden cursor-pointer" 
+              <div
+                className="lg:hidden cursor-pointer"
                 onClick={() => setIsMobileMenuOpen(true)}
               >
                 <TeamTuneLogo showText={false} />
@@ -181,7 +200,7 @@ export const ProjectManagerLayout = ({
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
                   type="text"
-                  placeholder="Search projects..."
+                  placeholder="Search users, projects..."
                   className="pl-10 pr-4 py-2 bg-accent border-none rounded-lg text-sm w-64 focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </div>
@@ -202,14 +221,12 @@ export const ProjectManagerLayout = ({
               </Button>
 
               {/* Notifications */}
-              <button 
-                onClick={toggleNotifications}
+              <button
+                onClick={() => setIsNotificationPanelOpen(true)}
                 className="relative p-2 text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Bell className="h-5 w-5" />
-                {notificationsEnabled && (
-                  <span className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full" />
-                )}
+                <span className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full" />
               </button>
 
               {/* Profile Menu */}
@@ -217,29 +234,29 @@ export const ProjectManagerLayout = ({
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center gap-3 p-2">
                     <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center">
-                      <User className="h-4 w-4 text-primary-foreground" />
+                      <Shield className="h-4 w-4 text-primary-foreground" />
                     </div>
                     <div className="hidden sm:block text-left">
                       <p className="text-sm font-medium text-foreground">
-                        {displayName}
+                        {user?.full_name || "Admin User"}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {user?.email || "Project Manager"}
+                        {user?.email || "System Administrator"}
                       </p>
                     </div>
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem 
-                    onClick={() => navigate("/dashboard/project-manager/profile")}
+                  <DropdownMenuItem
+                    onClick={() => navigate("/dashboard/admin/profile")}
                     className="flex items-center gap-2"
                   >
                     <User className="h-4 w-4" />
                     Profile
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={handleLogout}
                     className="flex items-center gap-2 text-destructive focus:text-destructive"
                   >
@@ -273,6 +290,12 @@ export const ProjectManagerLayout = ({
         </div>
       </main>
 
+      {/* Notification Panel */}
+      <NotificationPanel
+        isOpen={isNotificationPanelOpen}
+        onClose={() => setIsNotificationPanelOpen(false)}
+      />
+
       {/* Mobile Sidebar */}
       <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
         <SheetContent side="left" className="w-64 p-0">
@@ -288,6 +311,28 @@ export const ProjectManagerLayout = ({
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.path);
+
+                if (item.isButton && item.onClick) {
+                  return (
+                    <button
+                      key={item.path}
+                      onClick={() => {
+                        item.onClick?.();
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors",
+                        active
+                          ? "font-medium text-foreground bg-accent"
+                          : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {item.label}
+                    </button>
+                  );
+                }
+
                 return (
                   <Link
                     key={item.path}

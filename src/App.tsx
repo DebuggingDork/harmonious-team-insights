@@ -31,6 +31,27 @@ import ProjectDetail from "./pages/dashboard/ProjectDetail";
 import TeamLeadDashboard from "./pages/dashboard/TeamLeadDashboard";
 import MemberDashboard from "./pages/dashboard/MemberDashboard";
 
+// Team Lead pages
+import TasksPage from "./pages/dashboard/team-lead/TasksPage";
+import FeedbackPage from "./pages/dashboard/team-lead/FeedbackPage";
+import TeamManagementPage from "./pages/dashboard/team-lead/TeamManagementPage";
+import TeamLeadProfilePage from "./pages/dashboard/team-lead/ProfilePage";
+
+// Member pages
+import MemberTasksPage from "./pages/dashboard/member/TasksPage";
+import TimeTrackingPage from "./pages/dashboard/member/TimeTrackingPage";
+import MemberProfilePage from "./pages/dashboard/member/ProfilePage";
+
+// Admin pages
+import AdminSettingsPage from "./pages/dashboard/admin/SettingsPage";
+import PluginsPage from "./pages/dashboard/admin/PluginsPage";
+import DepartmentsPage from "./pages/dashboard/admin/DepartmentsPage";
+import AdminProfilePage from "./pages/dashboard/admin/ProfilePage";
+
+// Project Manager pages
+import ProjectManagerProfilePage from "./pages/dashboard/project-manager/ProfilePage";
+import ReportsPage from "./pages/dashboard/project-manager/ReportsPage";
+
 // Configure React Query client
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -137,6 +158,118 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="employee">
                   <MemberDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Team Lead Routes */}
+            <Route
+              path="/dashboard/team-lead/tasks"
+              element={
+                <ProtectedRoute requiredRole="team_lead">
+                  <TasksPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/team-lead/feedback"
+              element={
+                <ProtectedRoute requiredRole="team_lead">
+                  <FeedbackPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/team-lead/team"
+              element={
+                <ProtectedRoute requiredRole="team_lead">
+                  <TeamManagementPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/team-lead/profile"
+              element={
+                <ProtectedRoute requiredRole="team_lead">
+                  <TeamLeadProfilePage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Employee/Member Routes */}
+            <Route
+              path="/dashboard/member/tasks"
+              element={
+                <ProtectedRoute requiredRole="employee">
+                  <MemberTasksPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/member/time-tracking"
+              element={
+                <ProtectedRoute requiredRole="employee">
+                  <TimeTrackingPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/member/profile"
+              element={
+                <ProtectedRoute requiredRole="employee">
+                  <MemberProfilePage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Admin Routes */}
+            <Route
+              path="/dashboard/admin/settings"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminSettingsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/admin/plugins"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <PluginsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/admin/departments"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <DepartmentsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/admin/profile"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminProfilePage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Project Manager Routes */}
+            <Route
+              path="/dashboard/project-manager/profile"
+              element={
+                <ProtectedRoute requiredRole="project_manager">
+                  <ProjectManagerProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/project-manager/reports"
+              element={
+                <ProtectedRoute requiredRole="project_manager">
+                  <ReportsPage />
                 </ProtectedRoute>
               }
             />

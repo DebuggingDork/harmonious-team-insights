@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useMemo, useState } from "react";
 import { 
   User, 
@@ -12,7 +12,8 @@ import {
   Bell,
   LogOut,
   CheckCircle,
-  Loader2
+  Loader2,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +23,13 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import TeamTuneLogo from "@/components/TeamTuneLogo";
 import {
   ChartContainer,
@@ -57,6 +65,7 @@ const chartConfig = {
 
 const MemberDashboard = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const dateRanges = useMemo(() => getDateRanges(), []);
@@ -84,6 +93,7 @@ const MemberDashboard = () => {
 
   const handleLogout = async () => {
     await logout();
+    navigate("/");
   };
 
   // Transform profile data
@@ -266,17 +276,43 @@ const MemberDashboard = () => {
               <button className="relative p-2 text-muted-foreground hover:text-foreground transition-colors">
                 <Bell className="h-5 w-5" />
               </button>
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center">
-                  <span className="text-sm font-medium text-primary-foreground">
-                    {personalData?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || "U"}
-                  </span>
-                </div>
-                <div className="hidden sm:block">
-                  <p className="text-sm font-medium text-foreground">{personalData?.name || user?.full_name || "Member"}</p>
-                  <p className="text-xs text-muted-foreground">{personalData?.email || user?.email || "Member"}</p>
-                </div>
-              </div>
+              
+              {/* Profile Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center gap-3 p-2">
+                    <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center">
+                      <User className="h-4 w-4 text-primary-foreground" />
+                    </div>
+                    <div className="hidden sm:block text-left">
+                      <p className="text-sm font-medium text-foreground">
+                        {personalData?.name || user?.full_name || "Member"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {personalData?.email || user?.email || "Member"}
+                      </p>
+                    </div>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem 
+                    onClick={() => navigate("/dashboard/member/profile")}
+                    className="flex items-center gap-2"
+                  >
+                    <User className="h-4 w-4" />
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 text-destructive focus:text-destructive"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </header>

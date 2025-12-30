@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { 
   Shield, 
@@ -21,7 +21,10 @@ import {
   Layers,
   Loader2,
   Sun,
-  Moon
+  Moon,
+  Plug,
+  ChevronDown,
+  User
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +35,13 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import TeamTuneLogo from "@/components/TeamTuneLogo";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -46,6 +56,7 @@ import NotificationPanel from "@/components/admin/NotificationPanel";
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const navigate = useNavigate();
   const { data: pendingUsers = [], isLoading: isLoadingPending } = usePendingUsers();
   const { data: allUsers = [], isLoading: isLoadingAll } = useAllUsers();
   const approveUserMutation = useApproveUser();
@@ -129,28 +140,27 @@ const AdminDashboard = () => {
               <UserCog className="h-4 w-4" />
               Roles
             </button>
-            <button 
-              onClick={() => setActiveTab("departments")}
-              className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors ${
-                activeTab === "departments" 
-                  ? "font-medium text-foreground bg-accent" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              }`}
+            <Link
+              to="/dashboard/admin/departments"
+              className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors text-muted-foreground hover:text-foreground hover:bg-accent"
             >
               <Building2 className="h-4 w-4" />
               Departments
-            </button>
-            <button 
-              onClick={() => setActiveTab("settings")}
-              className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors ${
-                activeTab === "settings" 
-                  ? "font-medium text-foreground bg-accent" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              }`}
+            </Link>
+            <Link
+              to="/dashboard/admin/settings"
+              className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors text-muted-foreground hover:text-foreground hover:bg-accent"
             >
               <Settings className="h-4 w-4" />
               Settings
-            </button>
+            </Link>
+            <Link
+              to="/dashboard/admin/plugins"
+              className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors text-muted-foreground hover:text-foreground hover:bg-accent"
+            >
+              <Plug className="h-4 w-4" />
+              Plugins
+            </Link>
           </div>
         </nav>
 
@@ -210,15 +220,37 @@ const AdminDashboard = () => {
                 <Bell className="h-5 w-5" />
                 <span className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full" />
               </button>
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center">
-                  <Shield className="h-4 w-4 text-primary-foreground" />
-                </div>
-                <div className="hidden sm:block">
-                  <p className="text-sm font-medium text-foreground">{user?.full_name || "Admin User"}</p>
-                  <p className="text-xs text-muted-foreground">{user?.email || "System Administrator"}</p>
-                </div>
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center gap-3 p-2">
+                    <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center">
+                      <Shield className="h-4 w-4 text-primary-foreground" />
+                    </div>
+                    <div className="hidden sm:block text-left">
+                      <p className="text-sm font-medium text-foreground">{user?.full_name || "Admin User"}</p>
+                      <p className="text-xs text-muted-foreground">{user?.email || "System Administrator"}</p>
+                    </div>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem 
+                    onClick={() => navigate("/dashboard/admin/profile")}
+                    className="flex items-center gap-2"
+                  >
+                    <User className="h-4 w-4" />
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 text-destructive focus:text-destructive"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </header>
@@ -420,8 +452,6 @@ const AdminDashboard = () => {
 
           {activeTab === "users" && <AdminUsers />}
           {activeTab === "roles" && <AdminRoles />}
-          {activeTab === "departments" && <AdminDepartments />}
-          {activeTab === "settings" && <AdminSettings />}
         </div>
 
         {/* Notification Panel */}
@@ -485,34 +515,30 @@ const AdminDashboard = () => {
                 <UserCog className="h-4 w-4" />
                 Roles
               </button>
-              <button 
-                onClick={() => {
-                  setActiveTab("departments");
-                  setIsMobileMenuOpen(false);
-                }}
-                className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors ${
-                  activeTab === "departments" 
-                    ? "font-medium text-foreground bg-accent" 
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                }`}
+              <Link
+                to="/dashboard/admin/departments"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors text-muted-foreground hover:text-foreground hover:bg-accent"
               >
                 <Building2 className="h-4 w-4" />
                 Departments
-              </button>
-              <button 
-                onClick={() => {
-                  setActiveTab("settings");
-                  setIsMobileMenuOpen(false);
-                }}
-                className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors ${
-                  activeTab === "settings" 
-                    ? "font-medium text-foreground bg-accent" 
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                }`}
+              </Link>
+              <Link
+                to="/dashboard/admin/settings"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors text-muted-foreground hover:text-foreground hover:bg-accent"
               >
                 <Settings className="h-4 w-4" />
                 Settings
-              </button>
+              </Link>
+              <Link
+                to="/dashboard/admin/plugins"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors text-muted-foreground hover:text-foreground hover:bg-accent"
+              >
+                <Plug className="h-4 w-4" />
+                Plugins
+              </Link>
             </div>
           </nav>
           <div className="border-t border-border p-6">
