@@ -13,6 +13,9 @@ import type {
   BulkDeleteUserRequest,
   DemotePMRequest,
   DemoteTLRequest,
+  PromotePMRequest,
+  PromoteTLRequest,
+  ChangeRoleRequest,
   UpdatePluginRequest,
 } from '@/api/types';
 import { handleError } from '@/utils/errorHandler';
@@ -241,6 +244,80 @@ export const useDemoteTeamLead = () => {
       adminService.demoteTeamLead(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminKeys.users.all });
+    },
+    onError: handleError,
+  });
+};
+
+/**
+ * Get role statistics query
+ */
+export const useRoleStats = () => {
+  return useQuery({
+    queryKey: ['admin', 'roles', 'stats'],
+    queryFn: adminService.getRoleStats,
+    staleTime: 30000,
+  });
+};
+
+/**
+ * Get users by role query
+ */
+export const useUsersByRole = (role: string, filters?: { page?: number; limit?: number }) => {
+  return useQuery({
+    queryKey: ['admin', 'roles', role, 'users', filters],
+    queryFn: () => adminService.getUsersByRole(role, filters),
+    enabled: !!role,
+    staleTime: 30000,
+  });
+};
+
+/**
+ * Promote to project manager mutation
+ */
+export const usePromoteToProjectManager = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data?: PromotePMRequest }) =>
+      adminService.promoteToProjectManager(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.users.all });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'roles'] });
+    },
+    onError: handleError,
+  });
+};
+
+/**
+ * Promote to team lead mutation
+ */
+export const usePromoteToTeamLead = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data?: PromoteTLRequest }) =>
+      adminService.promoteToTeamLead(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.users.all });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'roles'] });
+    },
+    onError: handleError,
+  });
+};
+
+/**
+ * Change user role mutation
+ */
+export const useChangeUserRole = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: ChangeRoleRequest }) =>
+      adminService.changeUserRole(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.users.all });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'roles'] });
     },
     onError: handleError,
   });

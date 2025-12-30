@@ -26,6 +26,13 @@ import type {
   DemoteTLResponse,
   ManagedProjectsResponse,
   LedTeamsResponse,
+  PromotePMRequest,
+  PromotePMResponse,
+  PromoteTLRequest,
+  PromoteTLResponse,
+  ChangeRoleRequest,
+  ChangeRoleResponse,
+  RoleStatsResponse,
   Plugin,
   UpdatePluginRequest,
   GitHubConnectResponse,
@@ -159,6 +166,53 @@ export const demoteProjectManager = async (id: string, data: DemotePMRequest): P
  */
 export const demoteTeamLead = async (id: string, data: DemoteTLRequest): Promise<DemoteTLResponse> => {
   const response = await apiClient.post<DemoteTLResponse>(ENDPOINTS.ADMIN.USERS.DEMOTE_TL(id), data);
+  return response.data;
+};
+
+/**
+ * Get role statistics
+ */
+export const getRoleStats = async (): Promise<RoleStatsResponse> => {
+  const response = await apiClient.get<RoleStatsResponse>(ENDPOINTS.ADMIN.ROLES.STATS);
+  return response.data;
+};
+
+/**
+ * Get users by role with pagination
+ */
+export const getUsersByRole = async (role: string, filters?: { page?: number; limit?: number }): Promise<UsersResponse> => {
+  const params = new URLSearchParams();
+  if (filters?.page) params.append('page', filters.page.toString());
+  if (filters?.limit) params.append('limit', filters.limit.toString());
+
+  const queryString = params.toString();
+  const url = queryString ? `${ENDPOINTS.ADMIN.ROLES.USERS(role)}?${queryString}` : ENDPOINTS.ADMIN.ROLES.USERS(role);
+  
+  const response = await apiClient.get<UsersResponse>(url);
+  return response.data;
+};
+
+/**
+ * Promote user to project manager
+ */
+export const promoteToProjectManager = async (id: string, data?: PromotePMRequest): Promise<PromotePMResponse> => {
+  const response = await apiClient.post<PromotePMResponse>(ENDPOINTS.ADMIN.USERS.PROMOTE_PM(id), data || {});
+  return response.data;
+};
+
+/**
+ * Promote user to team lead
+ */
+export const promoteToTeamLead = async (id: string, data?: PromoteTLRequest): Promise<PromoteTLResponse> => {
+  const response = await apiClient.post<PromoteTLResponse>(ENDPOINTS.ADMIN.USERS.PROMOTE_TL(id), data || {});
+  return response.data;
+};
+
+/**
+ * Change user role (generic)
+ */
+export const changeUserRole = async (id: string, data: ChangeRoleRequest): Promise<ChangeRoleResponse> => {
+  const response = await apiClient.put<ChangeRoleResponse>(ENDPOINTS.ADMIN.USERS.CHANGE_ROLE(id), data);
   return response.data;
 };
 

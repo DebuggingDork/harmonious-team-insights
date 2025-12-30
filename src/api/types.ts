@@ -755,6 +755,55 @@ export interface LedTeamsResponse {
   total: number;
 }
 
+export interface RoleStatsResponse {
+  by_role: {
+    [key in UserRole]: {
+      total: number;
+      active: number;
+      blocked: number;
+      pending: number;
+    };
+  };
+  totals: {
+    total: number;
+    active: number;
+    blocked: number;
+    pending: number;
+  };
+}
+
+export interface PromotePMRequest {
+  department_id?: string;
+}
+
+export interface PromotePMResponse {
+  message: string;
+  user_id: string;
+  new_role: UserRole;
+}
+
+export interface PromoteTLRequest {
+  team_id?: string;
+}
+
+export interface PromoteTLResponse {
+  message: string;
+  user_id: string;
+  new_role: UserRole;
+}
+
+export interface ChangeRoleRequest {
+  role: UserRole;
+  replacement_id?: string;
+}
+
+export interface ChangeRoleResponse {
+  message: string;
+  user_id: string;
+  old_role: UserRole;
+  new_role: UserRole;
+}
+
 // Employee Types
 export interface EmployeeProfile {
   id: string;

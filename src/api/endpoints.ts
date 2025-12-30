@@ -28,6 +28,13 @@ export const ENDPOINTS = {
       DEMOTE_TL: (id: string) => `${API_BASE}${API_PREFIX}/admin/users/${id}/demote-tl`,
       MANAGED_PROJECTS: (id: string) => `${API_BASE}${API_PREFIX}/admin/users/${id}/managed-projects`,
       LED_TEAMS: (id: string) => `${API_BASE}${API_PREFIX}/admin/users/${id}/led-teams`,
+      PROMOTE_PM: (id: string) => `${API_BASE}${API_PREFIX}/admin/users/${id}/promote-pm`,
+      PROMOTE_TL: (id: string) => `${API_BASE}${API_PREFIX}/admin/users/${id}/promote-tl`,
+      CHANGE_ROLE: (id: string) => `${API_BASE}${API_PREFIX}/admin/users/${id}/role`,
+    },
+    ROLES: {
+      STATS: `${API_BASE}${API_PREFIX}/admin/roles/stats`,
+      USERS: (role: string) => `${API_BASE}${API_PREFIX}/admin/roles/${role}/users`,
     },
     PLUGINS: {
       LIST: `${API_BASE}${API_PREFIX}/admin/plugins`,
