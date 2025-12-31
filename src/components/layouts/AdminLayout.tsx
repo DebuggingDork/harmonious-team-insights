@@ -6,7 +6,7 @@ import {
   Settings,
   BarChart3,
   Bell,
-  Search,
+
   LogOut,
   UserCheck,
   UserX,
@@ -37,7 +37,7 @@ import TeamTuneLogo from "@/components/TeamTuneLogo";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
-import NotificationPanel from "@/components/admin/NotificationPanel";
+import NotificationPanel from "@/components/shared/NotificationPanel";
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -134,7 +134,7 @@ export const AdminLayout = ({
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.path);
-              
+
               if (item.isButton && item.onClick) {
                 return (
                   <button
@@ -196,14 +196,7 @@ export const AdminLayout = ({
               >
                 <TeamTuneLogo showText={false} />
               </div>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search users, projects..."
-                  className="pl-10 pr-4 py-2 bg-accent border-none rounded-lg text-sm w-64 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
+
             </div>
             <div className="flex items-center gap-4">
               {/* Theme Toggle */}
@@ -226,7 +219,7 @@ export const AdminLayout = ({
                 className="relative p-2 text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Bell className="h-5 w-5" />
-                <span className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full" />
+
               </button>
 
               {/* Profile Menu */}

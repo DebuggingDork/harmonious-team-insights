@@ -7,7 +7,7 @@ import {
   TrendingUp,
   MessageSquare,
   Bell,
-  Search,
+
   LogOut,
   Sun,
   Moon,
@@ -31,7 +31,10 @@ import {
 import TeamTuneLogo from "@/components/TeamTuneLogo";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/contexts/ThemeContext";
+import NotificationPanel from "@/components/shared/NotificationPanel";
 import { cn } from "@/lib/utils";
+
+
 
 interface MemberLayoutProps {
   children: ReactNode;
@@ -84,6 +87,7 @@ export const MemberLayout = ({
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
+  const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -104,12 +108,12 @@ export const MemberLayout = ({
   // Extract user name from email for display
   const getUserNameFromEmail = (email: string) => {
     if (!email) return "User";
-    
+
     const namePart = email.split('@')[0];
-    const nameParts = namePart.split(/[._-]/).map(part => 
+    const nameParts = namePart.split(/[._-]/).map(part =>
       part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
     );
-    
+
     return nameParts.join(' ');
   };
 
@@ -172,19 +176,11 @@ export const MemberLayout = ({
         <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div 
-                className="lg:hidden cursor-pointer" 
+              <div
+                className="lg:hidden cursor-pointer"
                 onClick={() => setIsMobileMenuOpen(true)}
               >
                 <TeamTuneLogo showText={false} />
-              </div>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="pl-10 pr-4 py-2 bg-accent border-none rounded-lg text-sm w-64 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                />
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -203,7 +199,8 @@ export const MemberLayout = ({
               </Button>
 
               {/* Notifications */}
-              <button 
+              <button
+                onClick={() => setIsNotificationPanelOpen(true)}
                 className="relative p-2 text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Bell className="h-5 w-5" />
@@ -228,7 +225,7 @@ export const MemberLayout = ({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={() => navigate("/dashboard/member/profile")}
                     className="flex items-center gap-2"
                   >
@@ -236,7 +233,7 @@ export const MemberLayout = ({
                     Profile
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={handleLogout}
                     className="flex items-center gap-2 text-destructive focus:text-destructive"
                   >
@@ -269,6 +266,12 @@ export const MemberLayout = ({
           {children}
         </div>
       </main>
+
+      {/* Notification Panel */}
+      <NotificationPanel
+        isOpen={isNotificationPanelOpen}
+        onClose={() => setIsNotificationPanelOpen(false)}
+      />
 
       {/* Mobile Sidebar */}
       <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
@@ -319,7 +322,7 @@ export const MemberLayout = ({
           </div>
         </SheetContent>
       </Sheet>
-    </div>
+    </div >
   );
 };
 

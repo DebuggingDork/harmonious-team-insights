@@ -57,12 +57,12 @@ const Navbar = () => {
             <Moon className="h-5 w-5" />
           )}
         </Button>
-        <Link to="/auth" className="">
+        <Link to="/auth/login" className="">
           <NavbarButton variant="secondary">
             Log in
           </NavbarButton>
         </Link>
-        <Link to="/auth/signup">
+        <Link to="/auth/register">
           <NavbarButton variant="primary">
             Get Started
           </NavbarButton>
@@ -100,12 +100,12 @@ const Navbar = () => {
               </>
             )}
           </Button>
-          <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)} className="w-full">
+          <Link to="/auth/login" onClick={() => setIsMobileMenuOpen(false)} className="w-full">
             <NavbarButton variant="secondary" className="w-full">
               Log in
             </NavbarButton>
           </Link>
-          <Link to="/auth/signup" onClick={() => setIsMobileMenuOpen(false)} className="w-full">
+          <Link to="/auth/register" onClick={() => setIsMobileMenuOpen(false)} className="w-full">
             <NavbarButton variant="primary" className="w-full">
               Get Started
             </NavbarButton>

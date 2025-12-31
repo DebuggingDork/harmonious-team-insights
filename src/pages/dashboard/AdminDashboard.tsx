@@ -1,13 +1,13 @@
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { 
-  Shield, 
-  Users, 
-  Settings, 
-  BarChart3, 
-  Bell, 
-  Search,
+import {
+  Shield,
+  Users,
+  Settings,
+  BarChart3,
+  Bell,
+
   LogOut,
   UserCheck,
   UserX,
@@ -65,13 +65,15 @@ import {
 import TeamTuneLogo from "@/components/TeamTuneLogo";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useTabPersistence } from "@/hooks/useTabPersistence";
 import { usePendingUsers, useAllUsers, useApproveUser, useRejectUser, useUnblockUser, useBulkApproveUsers, useBulkRejectUsers } from "@/hooks/useAdmin";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import AdminUsers from "@/components/admin/AdminUsers";
 import AdminRoles from "@/components/admin/AdminRoles";
 import AdminSettings from "@/components/admin/AdminSettings";
-import NotificationPanel from "@/components/admin/NotificationPanel";
+import NotificationPanel from "@/components/shared/NotificationPanel";
+
 import type { UserRole } from "@/api/types";
 
 const AdminDashboard = () => {
@@ -87,8 +89,10 @@ const AdminDashboard = () => {
   const unblockUserMutation = useUnblockUser();
   const bulkApproveMutation = useBulkApproveUsers();
   const bulkRejectMutation = useBulkRejectUsers();
-  const [activeTab, setActiveTab] = useState("dashboard");
-  const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
+  const { activeTab, setActiveTab } = useTabPersistence({
+    defaultTab: "dashboard",
+    validTabs: ["dashboard", "users", "roles"]
+  });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isBulkMode, setIsBulkMode] = useState(false);
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
@@ -101,6 +105,7 @@ const AdminDashboard = () => {
   const [isResultDialogOpen, setIsResultDialogOpen] = useState(false);
   // Track selected role for each pending user
   const [userRoles, setUserRoles] = useState<Record<string, UserRole>>({});
+  const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -183,7 +188,7 @@ const AdminDashboard = () => {
         role: bulkApproveRole,
         department_id: bulkApproveDepartmentId || undefined,
       });
-      
+
       setBulkOperationResult(result);
       setIsBulkApproveDialogOpen(false);
       setIsResultDialogOpen(true);
@@ -191,7 +196,7 @@ const AdminDashboard = () => {
       setBulkApproveRole("employee");
       setBulkApproveDepartmentId("");
       setIsBulkMode(false);
-      
+
       toast({
         title: "Bulk Approval Complete",
         description: `Approved ${result.total_approved} of ${result.total_requested} users`,
@@ -220,14 +225,14 @@ const AdminDashboard = () => {
         user_ids: Array.from(selectedUserIds),
         reason: bulkRejectReason || undefined,
       });
-      
+
       setBulkOperationResult(result);
       setIsBulkRejectDialogOpen(false);
       setIsResultDialogOpen(true);
       setSelectedUserIds(new Set());
       setBulkRejectReason("");
       setIsBulkMode(false);
-      
+
       toast({
         title: "Bulk Rejection Complete",
         description: `Rejected ${result.total_rejected} of ${result.total_requested} users`,
@@ -263,38 +268,35 @@ const AdminDashboard = () => {
         <Link to="/">
           <TeamTuneLogo />
         </Link>
-        
+
         <nav className="mt-8 flex-1">
           <div className="space-y-1">
-            <button 
+            <button
               onClick={() => setActiveTab("dashboard")}
-              className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg w-full text-left transition-colors ${
-                activeTab === "dashboard" 
-                  ? "text-foreground bg-accent" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              }`}
+              className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg w-full text-left transition-colors ${activeTab === "dashboard"
+                ? "text-foreground bg-accent"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                }`}
             >
               <BarChart3 className="h-4 w-4" />
               Dashboard
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab("users")}
-              className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors ${
-                activeTab === "users" 
-                  ? "font-medium text-foreground bg-accent" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              }`}
+              className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors ${activeTab === "users"
+                ? "font-medium text-foreground bg-accent"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                }`}
             >
               <Users className="h-4 w-4" />
               Users
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab("roles")}
-              className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors ${
-                activeTab === "roles" 
-                  ? "font-medium text-foreground bg-accent" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              }`}
+              className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors ${activeTab === "roles"
+                ? "font-medium text-foreground bg-accent"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                }`}
             >
               <UserCog className="h-4 w-4" />
               Roles
@@ -324,8 +326,8 @@ const AdminDashboard = () => {
         </nav>
 
         <div className="border-t border-border pt-4">
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             className="w-full justify-start gap-2 text-muted-foreground"
             onClick={handleLogout}
           >
@@ -341,20 +343,13 @@ const AdminDashboard = () => {
         <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div 
+              <div
                 className="lg:hidden cursor-pointer"
                 onClick={() => setIsMobileMenuOpen(true)}
               >
                 <TeamTuneLogo showText={false} />
               </div>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search users, projects..."
-                  className="pl-10 pr-4 py-2 bg-accent border-none rounded-lg text-sm w-64 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
+
             </div>
             <div className="flex items-center gap-4">
               {/* Theme Toggle */}
@@ -372,12 +367,11 @@ const AdminDashboard = () => {
               </Button>
 
               {/* Notifications */}
-              <button 
+              <button
                 onClick={() => setIsNotificationPanelOpen(true)}
                 className="relative p-2 text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Bell className="h-5 w-5" />
-                <span className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full" />
               </button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -398,7 +392,7 @@ const AdminDashboard = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={() => navigate("/dashboard/admin/profile")}
                     className="flex items-center gap-2"
                   >
@@ -406,7 +400,7 @@ const AdminDashboard = () => {
                     Profile
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={handleLogout}
                     className="flex items-center gap-2 text-destructive focus:text-destructive"
                   >
@@ -593,7 +587,7 @@ const AdminDashboard = () => {
                     )}
                   </div>
                 )}
-                
+
                 <div className="space-y-3">
                   {isLoadingPending ? (
                     <div className="flex items-center justify-center p-8">
@@ -605,75 +599,74 @@ const AdminDashboard = () => {
                     pendingUsers.map((pendingUser) => {
                       const isSelected = isBulkMode && selectedUserIds.has(pendingUser.id);
                       return (
-                      <div
-                        key={pendingUser.id}
-                        className={`flex items-center justify-between p-4 rounded-lg transition-colors ${
-                          isSelected 
-                            ? "bg-primary/10 border-2 border-primary" 
+                        <div
+                          key={pendingUser.id}
+                          className={`flex items-center justify-between p-4 rounded-lg transition-colors ${isSelected
+                            ? "bg-primary/10 border-2 border-primary"
                             : "bg-accent/50"
-                        }`}
-                      >
-                        <div className="flex items-center gap-4">
-                          {isBulkMode && (
-                            <Checkbox
-                              checked={selectedUserIds.has(pendingUser.id)}
-                              onCheckedChange={() => handleToggleUser(pendingUser.id)}
-                            />
-                          )}
-                          <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
-                            <span className="text-sm font-medium text-primary">
-                              {pendingUser.full_name.split(' ').map(n => n[0]).join('')}
-                            </span>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-foreground">{pendingUser.full_name}</p>
-                            <p className="text-xs text-muted-foreground">{pendingUser.email}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs text-muted-foreground hidden sm:block">
-                            Requested {pendingUser.created_at ? format(new Date(pendingUser.created_at), "MMM d, yyyy") : "N/A"}
-                          </span>
-                          {!isBulkMode && (
-                            <div className="flex gap-2 items-center">
-                              <Select
-                                value={userRoles[pendingUser.id] || "employee"}
-                                onValueChange={(value) => handleRoleChange(pendingUser.id, value as UserRole)}
-                              >
-                                <SelectTrigger className="w-[140px] h-8 text-xs">
-                                  <SelectValue placeholder="Select role" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="employee">Employee</SelectItem>
-                                  <SelectItem value="team_lead">Team Lead</SelectItem>
-                                  <SelectItem value="project_manager">Project Manager</SelectItem>
-                                  <SelectItem value="admin">Admin</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                onClick={() => handleReject(pendingUser.id)}
-                                disabled={rejectUserMutation.isPending}
-                              >
-                                <XCircle className="h-4 w-4 mr-1" />
-                                Reject
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                className="bg-primary hover:bg-primary/90"
-                                onClick={() => handleApprove(pendingUser.id)}
-                                disabled={approveUserMutation.isPending}
-                              >
-                                <CheckCircle className="h-4 w-4 mr-1" />
-                                Approve
-                              </Button>
+                            }`}
+                        >
+                          <div className="flex items-center gap-4">
+                            {isBulkMode && (
+                              <Checkbox
+                                checked={selectedUserIds.has(pendingUser.id)}
+                                onCheckedChange={() => handleToggleUser(pendingUser.id)}
+                              />
+                            )}
+                            <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
+                              <span className="text-sm font-medium text-primary">
+                                {pendingUser.full_name.split(' ').map(n => n[0]).join('')}
+                              </span>
                             </div>
-                          )}
+                            <div>
+                              <p className="text-sm font-medium text-foreground">{pendingUser.full_name}</p>
+                              <p className="text-xs text-muted-foreground">{pendingUser.email}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs text-muted-foreground hidden sm:block">
+                              Requested {pendingUser.created_at ? format(new Date(pendingUser.created_at), "MMM d, yyyy") : "N/A"}
+                            </span>
+                            {!isBulkMode && (
+                              <div className="flex gap-2 items-center">
+                                <Select
+                                  value={userRoles[pendingUser.id] || "employee"}
+                                  onValueChange={(value) => handleRoleChange(pendingUser.id, value as UserRole)}
+                                >
+                                  <SelectTrigger className="w-[140px] h-8 text-xs">
+                                    <SelectValue placeholder="Select role" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="employee">Employee</SelectItem>
+                                    <SelectItem value="team_lead">Team Lead</SelectItem>
+                                    <SelectItem value="project_manager">Project Manager</SelectItem>
+                                    <SelectItem value="admin">Admin</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  onClick={() => handleReject(pendingUser.id)}
+                                  disabled={rejectUserMutation.isPending}
+                                >
+                                  <XCircle className="h-4 w-4 mr-1" />
+                                  Reject
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  className="bg-primary hover:bg-primary/90"
+                                  onClick={() => handleApprove(pendingUser.id)}
+                                  disabled={approveUserMutation.isPending}
+                                >
+                                  <CheckCircle className="h-4 w-4 mr-1" />
+                                  Approve
+                                </Button>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    );
+                      );
                     })
                   )}
                 </div>
@@ -701,7 +694,7 @@ const AdminDashboard = () => {
                       {blockedUsersList.length} blocked
                     </Badge>
                   </div>
-                  
+
                   <div className="space-y-3">
                     {blockedUsersList.map((blockedUser) => (
                       <div
@@ -726,8 +719,8 @@ const AdminDashboard = () => {
                           <span className="text-xs text-muted-foreground hidden sm:block">
                             {blockedUser.updated_at ? format(new Date(blockedUser.updated_at), "MMM d, yyyy") : "N/A"}
                           </span>
-                          <Button 
-                            size="sm" 
+                          <Button
+                            size="sm"
                             variant="outline"
                             className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 border-emerald-200"
                             onClick={() => handleUnblock(blockedUser.id)}
@@ -752,21 +745,21 @@ const AdminDashboard = () => {
                 <h2 className="text-lg font-semibold text-foreground mb-4">Administrative Controls</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {[
-                    { 
-                      title: "User Management", 
-                      description: "View, edit, and manage all user accounts", 
+                    {
+                      title: "User Management",
+                      description: "View, edit, and manage all user accounts",
                       icon: Users,
                       action: () => setActiveTab("users")
                     },
-                    { 
-                      title: "Role Management", 
-                      description: "Configure roles and permissions", 
+                    {
+                      title: "Role Management",
+                      description: "Configure roles and permissions",
                       icon: UserCog,
                       action: () => setActiveTab("roles")
                     },
-                    { 
-                      title: "Project Management", 
-                      description: "View and manage all projects", 
+                    {
+                      title: "Project Management",
+                      description: "View and manage all projects",
                       icon: FolderKanban,
                       action: () => navigate("/dashboard/admin/projects")
                     },
@@ -792,213 +785,213 @@ const AdminDashboard = () => {
           {activeTab === "roles" && <AdminRoles />}
         </div>
 
-      {/* Notification Panel */}
-      <NotificationPanel
-        isOpen={isNotificationPanelOpen}
-        onClose={() => setIsNotificationPanelOpen(false)}
-      />
+        {/* Notification Panel */}
+        <NotificationPanel
+          isOpen={isNotificationPanelOpen}
+          onClose={() => setIsNotificationPanelOpen(false)}
+        />
 
-      {/* Bulk Approve Dialog */}
-      <Dialog open={isBulkApproveDialogOpen} onOpenChange={setIsBulkApproveDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Bulk Approve Users</DialogTitle>
-            <DialogDescription>
-              Approve {selectedUserIds.size} selected user(s). You can optionally set a role and department for all users.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Role (optional)</label>
-              <Select value={bulkApproveRole} onValueChange={(value) => setBulkApproveRole(value as UserRole)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="employee">Employee</SelectItem>
-                  <SelectItem value="team_lead">Team Lead</SelectItem>
-                  <SelectItem value="project_manager">Project Manager</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">Defaults to "employee" if not specified</p>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Department ID (optional)</label>
-              <Input
-                placeholder="Enter department ID"
-                value={bulkApproveDepartmentId}
-                onChange={(e) => setBulkApproveDepartmentId(e.target.value)}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsBulkApproveDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleBulkApprove}
-              disabled={bulkApproveMutation.isPending}
-            >
-              {bulkApproveMutation.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Approving...
-                </>
-              ) : (
-                <>
-                  <UserCheck className="h-4 w-4 mr-2" />
-                  Approve {selectedUserIds.size} User(s)
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Bulk Reject Dialog */}
-      <Dialog open={isBulkRejectDialogOpen} onOpenChange={setIsBulkRejectDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Bulk Reject Users</DialogTitle>
-            <DialogDescription>
-              Reject {selectedUserIds.size} selected user(s). You can optionally provide a reason for rejection.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Reason (optional)</label>
-              <Textarea
-                placeholder="Enter rejection reason..."
-                value={bulkRejectReason}
-                onChange={(e) => setBulkRejectReason(e.target.value)}
-                rows={4}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsBulkRejectDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleBulkReject}
-              disabled={bulkRejectMutation.isPending}
-            >
-              {bulkRejectMutation.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Rejecting...
-                </>
-              ) : (
-                <>
-                  <UserX className="h-4 w-4 mr-2" />
-                  Reject {selectedUserIds.size} User(s)
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Bulk Operation Result Dialog */}
-      <Dialog open={isResultDialogOpen} onOpenChange={setIsResultDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Bulk Operation Results</DialogTitle>
-            <DialogDescription>
-              Summary of the bulk operation
-            </DialogDescription>
-          </DialogHeader>
-          {bulkOperationResult && (
+        {/* Bulk Approve Dialog */}
+        <Dialog open={isBulkApproveDialogOpen} onOpenChange={setIsBulkApproveDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Bulk Approve Users</DialogTitle>
+              <DialogDescription>
+                Approve {selectedUserIds.size} selected user(s). You can optionally set a role and department for all users.
+              </DialogDescription>
+            </DialogHeader>
             <div className="space-y-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-muted/50 p-3 rounded-lg">
-                  <p className="text-sm text-muted-foreground">Total Requested</p>
-                  <p className="text-2xl font-bold">{bulkOperationResult.total_requested}</p>
-                </div>
-                <div className="bg-emerald-500/10 p-3 rounded-lg">
-                  <p className="text-sm text-emerald-600 dark:text-emerald-400">
-                    {bulkOperationResult.total_approved !== undefined ? "Approved" : "Rejected"}
-                  </p>
-                  <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                    {bulkOperationResult.total_approved ?? bulkOperationResult.total_rejected}
-                  </p>
-                </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Role (optional)</label>
+                <Select value={bulkApproveRole} onValueChange={(value) => setBulkApproveRole(value as UserRole)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="employee">Employee</SelectItem>
+                    <SelectItem value="team_lead">Team Lead</SelectItem>
+                    <SelectItem value="project_manager">Project Manager</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Defaults to "employee" if not specified</p>
               </div>
-              
-              {bulkOperationResult.failed && bulkOperationResult.failed.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-destructive">
-                    Failed ({bulkOperationResult.total_failed})
-                  </p>
-                  <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 max-h-48 overflow-y-auto">
-                    <div className="space-y-2">
-                      {bulkOperationResult.failed.map((failure: any, index: number) => (
-                        <div key={index} className="text-sm">
-                          <p className="font-medium text-destructive">User ID: {failure.user_id}</p>
-                          <p className="text-muted-foreground">{failure.error}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {bulkOperationResult.approved && bulkOperationResult.approved.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
-                    Approved ({bulkOperationResult.approved.length})
-                  </p>
-                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 max-h-48 overflow-y-auto">
-                    <div className="space-y-1">
-                      {bulkOperationResult.approved.map((userId: any, index: number) => {
-                        const user = allUsers.find(u => u.id === userId);
-                        const email = user?.email || 'Unknown';
-                        return (
-                          <p key={index} className="text-sm text-foreground">
-                            {email}
-                          </p>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {bulkOperationResult.rejected && bulkOperationResult.rejected.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
-                    Rejected ({bulkOperationResult.rejected.length})
-                  </p>
-                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 max-h-48 overflow-y-auto">
-                    <div className="space-y-1">
-                      {bulkOperationResult.rejected.map((userId: any, index: number) => {
-                        const user = allUsers.find(u => u.id === userId);
-                        const email = user?.email || 'Unknown';
-                        return (
-                          <p key={index} className="text-sm text-foreground">
-                            {email}
-                          </p>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Department ID (optional)</label>
+                <Input
+                  placeholder="Enter department ID"
+                  value={bulkApproveDepartmentId}
+                  onChange={(e) => setBulkApproveDepartmentId(e.target.value)}
+                />
+              </div>
             </div>
-          )}
-          <DialogFooter>
-            <Button onClick={() => setIsResultDialogOpen(false)}>Close</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsBulkApproveDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleBulkApprove}
+                disabled={bulkApproveMutation.isPending}
+              >
+                {bulkApproveMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Approving...
+                  </>
+                ) : (
+                  <>
+                    <UserCheck className="h-4 w-4 mr-2" />
+                    Approve {selectedUserIds.size} User(s)
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Bulk Reject Dialog */}
+        <Dialog open={isBulkRejectDialogOpen} onOpenChange={setIsBulkRejectDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Bulk Reject Users</DialogTitle>
+              <DialogDescription>
+                Reject {selectedUserIds.size} selected user(s). You can optionally provide a reason for rejection.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Reason (optional)</label>
+                <Textarea
+                  placeholder="Enter rejection reason..."
+                  value={bulkRejectReason}
+                  onChange={(e) => setBulkRejectReason(e.target.value)}
+                  rows={4}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsBulkRejectDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleBulkReject}
+                disabled={bulkRejectMutation.isPending}
+              >
+                {bulkRejectMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Rejecting...
+                  </>
+                ) : (
+                  <>
+                    <UserX className="h-4 w-4 mr-2" />
+                    Reject {selectedUserIds.size} User(s)
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Bulk Operation Result Dialog */}
+        <Dialog open={isResultDialogOpen} onOpenChange={setIsResultDialogOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Bulk Operation Results</DialogTitle>
+              <DialogDescription>
+                Summary of the bulk operation
+              </DialogDescription>
+            </DialogHeader>
+            {bulkOperationResult && (
+              <div className="space-y-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-muted/50 p-3 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Total Requested</p>
+                    <p className="text-2xl font-bold">{bulkOperationResult.total_requested}</p>
+                  </div>
+                  <div className="bg-emerald-500/10 p-3 rounded-lg">
+                    <p className="text-sm text-emerald-600 dark:text-emerald-400">
+                      {bulkOperationResult.total_approved !== undefined ? "Approved" : "Rejected"}
+                    </p>
+                    <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                      {bulkOperationResult.total_approved ?? bulkOperationResult.total_rejected}
+                    </p>
+                  </div>
+                </div>
+
+                {bulkOperationResult.failed && bulkOperationResult.failed.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-destructive">
+                      Failed ({bulkOperationResult.total_failed})
+                    </p>
+                    <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 max-h-48 overflow-y-auto">
+                      <div className="space-y-2">
+                        {bulkOperationResult.failed.map((failure: any, index: number) => (
+                          <div key={index} className="text-sm">
+                            <p className="font-medium text-destructive">User ID: {failure.user_id}</p>
+                            <p className="text-muted-foreground">{failure.error}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {bulkOperationResult.approved && bulkOperationResult.approved.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                      Approved ({bulkOperationResult.approved.length})
+                    </p>
+                    <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 max-h-48 overflow-y-auto">
+                      <div className="space-y-1">
+                        {bulkOperationResult.approved.map((userId: any, index: number) => {
+                          const user = allUsers.find(u => u.id === userId);
+                          const email = user?.email || 'Unknown';
+                          return (
+                            <p key={index} className="text-sm text-foreground">
+                              {email}
+                            </p>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {bulkOperationResult.rejected && bulkOperationResult.rejected.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                      Rejected ({bulkOperationResult.rejected.length})
+                    </p>
+                    <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 max-h-48 overflow-y-auto">
+                      <div className="space-y-1">
+                        {bulkOperationResult.rejected.map((userId: any, index: number) => {
+                          const user = allUsers.find(u => u.id === userId);
+                          const email = user?.email || 'Unknown';
+                          return (
+                            <p key={index} className="text-sm text-foreground">
+                              {email}
+                            </p>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            <DialogFooter>
+              <Button onClick={() => setIsResultDialogOpen(false)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main>
 
       {/* Mobile Sidebar */}
@@ -1013,44 +1006,41 @@ const AdminDashboard = () => {
           </SheetHeader>
           <nav className="flex-1 p-6">
             <div className="space-y-1">
-              <button 
+              <button
                 onClick={() => {
                   setActiveTab("dashboard");
                   setIsMobileMenuOpen(false);
                 }}
-                className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg w-full text-left transition-colors ${
-                  activeTab === "dashboard" 
-                    ? "text-foreground bg-accent" 
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                }`}
+                className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg w-full text-left transition-colors ${activeTab === "dashboard"
+                  ? "text-foreground bg-accent"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  }`}
               >
                 <BarChart3 className="h-4 w-4" />
                 Dashboard
               </button>
-              <button 
+              <button
                 onClick={() => {
                   setActiveTab("users");
                   setIsMobileMenuOpen(false);
                 }}
-                className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors ${
-                  activeTab === "users" 
-                    ? "font-medium text-foreground bg-accent" 
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                }`}
+                className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors ${activeTab === "users"
+                  ? "font-medium text-foreground bg-accent"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  }`}
               >
                 <Users className="h-4 w-4" />
                 Users
               </button>
-              <button 
+              <button
                 onClick={() => {
                   setActiveTab("roles");
                   setIsMobileMenuOpen(false);
                 }}
-                className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors ${
-                  activeTab === "roles" 
-                    ? "font-medium text-foreground bg-accent" 
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                }`}
+                className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors ${activeTab === "roles"
+                  ? "font-medium text-foreground bg-accent"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  }`}
               >
                 <UserCog className="h-4 w-4" />
                 Roles
@@ -1082,8 +1072,8 @@ const AdminDashboard = () => {
             </div>
           </nav>
           <div className="border-t border-border p-6">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               className="w-full justify-start gap-2 text-muted-foreground"
               onClick={async () => {
                 await handleLogout();

@@ -14,12 +14,8 @@ import NotFound from "./pages/NotFound";
 import Pricing from "./pages/Pricing";
 
 // Auth pages
-import RoleSelection from "./pages/auth/RoleSelection";
-import AdminLogin from "./pages/auth/AdminLogin";
-import ProjectManagerLogin from "./pages/auth/ProjectManagerLogin";
-import TeamLeadLogin from "./pages/auth/TeamLeadLogin";
-import MemberLogin from "./pages/auth/MemberLogin";
-import EmployeeSignUp from "./pages/auth/EmployeeSignUp";
+import LoginPage from "./pages/auth/LoginPage";
+import Register from "./pages/auth/Register";
 import PendingApproval from "./pages/auth/PendingApproval";
 
 // Dashboard pages
@@ -91,215 +87,211 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
-            <HashCleaner />
-            <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/pricing" element={<Pricing />} />
+              <HashCleaner />
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/pricing" element={<Pricing />} />
 
-            {/* Auth routes */}
-            <Route path="/auth" element={<RoleSelection />} />
-            <Route path="/auth/admin" element={<AdminLogin />} />
-            <Route path="/auth/project-manager" element={<ProjectManagerLogin />} />
-            <Route path="/auth/team-lead" element={<TeamLeadLogin />} />
-            <Route path="/auth/member" element={<MemberLogin />} />
-            <Route path="/auth/signup" element={<EmployeeSignUp />} />
-            <Route path="/auth/pending-approval" element={<PendingApproval />} />
+                {/* Auth routes */}
+                <Route path="/auth/login" element={<LoginPage />} />
+                <Route path="/auth/register" element={<Register />} />
+                <Route path="/auth/pending-approval" element={<PendingApproval />} />
 
-            {/* Dashboard routes - Protected */}
-            <Route
-              path="/dashboard/admin"
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/project-manager"
-              element={
-                <ProtectedRoute requiredRole="project_manager">
-                  <ProjectManagerDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/project-manager/projects"
-              element={
-                <ProtectedRoute requiredRole="project_manager">
-                  <ProjectsPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/project-manager/timeline"
-              element={
-                <ProtectedRoute requiredRole="project_manager">
-                  <TimelinePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/project-manager/projects/:projectCode"
-              element={
-                <ProtectedRoute requiredRole="project_manager">
-                  <ProjectDetail />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/team-lead"
-              element={
-                <ProtectedRoute requiredRole="team_lead">
-                  <TeamLeadDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/member"
-              element={
-                <ProtectedRoute requiredRole="employee">
-                  <MemberDashboard />
-                </ProtectedRoute>
-              }
-            />
+                {/* Dashboard routes - Protected */}
+                <Route
+                  path="/dashboard/admin"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/project-manager"
+                  element={
+                    <ProtectedRoute requiredRole="project_manager">
+                      <ProjectManagerDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/project-manager/projects"
+                  element={
+                    <ProtectedRoute requiredRole="project_manager">
+                      <ProjectsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/project-manager/timeline"
+                  element={
+                    <ProtectedRoute requiredRole="project_manager">
+                      <TimelinePage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/project-manager/projects/:projectCode"
+                  element={
+                    <ProtectedRoute requiredRole="project_manager">
+                      <ProjectDetail />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/team-lead"
+                  element={
+                    <ProtectedRoute requiredRole="team_lead">
+                      <TeamLeadDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/member"
+                  element={
+                    <ProtectedRoute requiredRole="employee">
+                      <MemberDashboard />
+                    </ProtectedRoute>
+                  }
+                />
 
-            {/* Team Lead Routes */}
-            <Route
-              path="/dashboard/team-lead/tasks"
-              element={
-                <ProtectedRoute requiredRole="team_lead">
-                  <TasksPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/team-lead/feedback"
-              element={
-                <ProtectedRoute requiredRole="team_lead">
-                  <FeedbackPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/team-lead/team"
-              element={
-                <ProtectedRoute requiredRole="team_lead">
-                  <TeamManagementPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/team-lead/profile"
-              element={
-                <ProtectedRoute requiredRole="team_lead">
-                  <TeamLeadProfilePage />
-                </ProtectedRoute>
-              }
-            />
+                {/* Team Lead Routes */}
+                <Route
+                  path="/dashboard/team-lead/tasks"
+                  element={
+                    <ProtectedRoute requiredRole="team_lead">
+                      <TasksPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/team-lead/feedback"
+                  element={
+                    <ProtectedRoute requiredRole="team_lead">
+                      <FeedbackPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/team-lead/team"
+                  element={
+                    <ProtectedRoute requiredRole="team_lead">
+                      <TeamManagementPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/team-lead/profile"
+                  element={
+                    <ProtectedRoute requiredRole="team_lead">
+                      <TeamLeadProfilePage />
+                    </ProtectedRoute>
+                  }
+                />
 
-            {/* Employee/Member Routes */}
-            <Route
-              path="/dashboard/member/tasks"
-              element={
-                <ProtectedRoute requiredRole="employee">
-                  <MemberTasksPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/member/time-tracking"
-              element={
-                <ProtectedRoute requiredRole="employee">
-                  <TimeTrackingPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/member/profile"
-              element={
-                <ProtectedRoute requiredRole="employee">
-                  <MemberProfilePage />
-                </ProtectedRoute>
-              }
-            />
+                {/* Employee/Member Routes */}
+                <Route
+                  path="/dashboard/member/tasks"
+                  element={
+                    <ProtectedRoute requiredRole="employee">
+                      <MemberTasksPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/member/time-tracking"
+                  element={
+                    <ProtectedRoute requiredRole="employee">
+                      <TimeTrackingPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/member/profile"
+                  element={
+                    <ProtectedRoute requiredRole="employee">
+                      <MemberProfilePage />
+                    </ProtectedRoute>
+                  }
+                />
 
-            {/* Admin Routes */}
-            <Route
-              path="/dashboard/admin/settings"
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminSettingsPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/admin/plugins"
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <PluginsPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/admin/projects"
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminProjectsPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/admin/projects/:projectId"
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminProjectDetailPage />
-                </ProtectedRoute>
-              }
-            />
-            {/* Redirect old departments route to projects */}
-            <Route
-              path="/dashboard/admin/departments"
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <Navigate to="/dashboard/admin/projects" replace />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/admin/profile"
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminProfilePage />
-                </ProtectedRoute>
-              }
-            />
+                {/* Admin Routes */}
+                <Route
+                  path="/dashboard/admin/settings"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AdminSettingsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/admin/plugins"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <PluginsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/admin/projects"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AdminProjectsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/admin/projects/:projectId"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AdminProjectDetailPage />
+                    </ProtectedRoute>
+                  }
+                />
+                {/* Redirect old departments route to projects */}
+                <Route
+                  path="/dashboard/admin/departments"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <Navigate to="/dashboard/admin/projects" replace />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/admin/profile"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AdminProfilePage />
+                    </ProtectedRoute>
+                  }
+                />
 
-            {/* Project Manager Routes */}
-            <Route
-              path="/dashboard/project-manager/profile"
-              element={
-                <ProtectedRoute requiredRole="project_manager">
-                  <ProjectManagerProfilePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/project-manager/reports"
-              element={
-                <ProtectedRoute requiredRole="project_manager">
-                  <ReportsPage />
-                </ProtectedRoute>
-              }
-            />
+                {/* Project Manager Routes */}
+                <Route
+                  path="/dashboard/project-manager/profile"
+                  element={
+                    <ProtectedRoute requiredRole="project_manager">
+                      <ProjectManagerProfilePage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/project-manager/reports"
+                  element={
+                    <ProtectedRoute requiredRole="project_manager">
+                      <ReportsPage />
+                    </ProtectedRoute>
+                  }
+                />
 
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </ThemeProvider>
-  </QueryClientProvider>
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   </ErrorBoundary>
 );
 

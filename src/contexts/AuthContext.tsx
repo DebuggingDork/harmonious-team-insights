@@ -9,7 +9,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   logout: () => Promise<void>;
   hasRole: (role: string) => boolean;
   updateUserRole: (newRole: string) => void;
@@ -52,10 +52,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     initAuth();
   }, []);
 
-  const login = async (email: string, password: string): Promise<void> => {
+  const login = async (email: string, password: string): Promise<User> => {
     try {
       const response = await authService.login({ email, password });
-      
+
       // Debug logging
       if (process.env.NODE_ENV === 'development') {
         console.log('Login response:', {
@@ -64,12 +64,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           userRole: response.user?.role,
         });
       }
-      
+
       // Store token and user
       setToken(response.token);
       setUser(response.user);
       setUserState(response.user);
-      
+
       // Verify user was stored
       if (process.env.NODE_ENV === 'development') {
         setTimeout(() => {
@@ -77,6 +77,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           console.log('Stored user after login:', storedUser);
         }, 100);
       }
+
+      return response.user;
     } catch (error) {
       // Don't show generic error here - let the LoginForm component handle it
       // so it can show specific messages for blocked accounts, etc.
@@ -96,7 +98,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Clear local state regardless of API call result
       clearAuth();
       setUserState(null);
-      
+
       // Show logout confirmation toast only if explicitly requested (not for 401 auto-logout)
       if (showToast) {
         toast({
@@ -109,32 +111,32 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const hasRole = (role: string): boolean => {
     if (!user?.role) return false;
-    
+
     // Normalize roles for comparison (handle case and format differences)
     const userRole = user.role.toLowerCase().trim();
     const requiredRole = role.toLowerCase().trim();
     const matches = userRole === requiredRole;
-    
+
     // Debug logging (remove in production)
     if (process.env.NODE_ENV === 'development') {
-      console.log('hasRole check:', { 
-        userRole: user.role, 
+      console.log('hasRole check:', {
+        userRole: user.role,
         normalizedUserRole: userRole,
         requiredRole: role,
         normalizedRequiredRole: requiredRole,
-        matches 
+        matches
       });
     }
-    
+
     return matches;
   };
 
   const updateUserRole = (newRole: string): void => {
     if (!user) return;
-    
+
     const updatedUser = { ...user, role: newRole as User['role'] };
     setUserState(updatedUser);
-    
+
     // Update in localStorage if user data is persisted
     const storedUser = getUser<User>();
     if (storedUser) {

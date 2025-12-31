@@ -18,7 +18,7 @@ const pricingPlans = [
     ],
     description: "Perfect for individuals and small projects.",
     buttonText: "Start Free Trial",
-    href: "/auth/signup",
+    href: "/auth/register",
   },
   {
     name: "Professional",
@@ -34,7 +34,7 @@ const pricingPlans = [
     ],
     description: "Ideal for growing teams and businesses.",
     buttonText: "Get Started",
-    href: "/auth/signup",
+    href: "/auth/register",
     isPopular: true,
   },
   {
@@ -50,7 +50,7 @@ const pricingPlans = [
     ],
     description: "For large organizations with specific needs.",
     buttonText: "Contact Sales",
-    href: "/auth/signup",
+    href: "/auth/register",
   },
 ];
 

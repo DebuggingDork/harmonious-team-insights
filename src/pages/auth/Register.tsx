@@ -11,7 +11,7 @@ import * as authService from "@/services/auth.service";
 import { handleError } from "@/utils/errorHandler";
 import loginHero from "@/assets/login-hero.jpg";
 
-const EmployeeSignUp = () => {
+const Register = () => {
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -25,7 +25,7 @@ const EmployeeSignUp = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!fullName || !username || !email || !password || !confirmPassword) {
       toast({
         title: "Missing fields",
@@ -63,12 +63,12 @@ const EmployeeSignUp = () => {
         username: username.trim(),
         full_name: fullName.trim(),
       });
-      
+
       toast({
         title: "Registration successful",
         description: "Your account request has been submitted. Awaiting admin approval.",
       });
-      
+
       navigate("/auth/pending-approval");
     } catch (error) {
       // Log error for debugging
@@ -231,7 +231,7 @@ const EmployeeSignUp = () => {
 
             <p className="text-center text-sm text-muted-foreground mt-8">
               Already have an account?{" "}
-              <Link to="/auth" className="text-primary hover:underline">
+              <Link to="/auth/login" className="text-primary hover:underline font-medium">
                 Sign in
               </Link>
             </p>
@@ -253,7 +253,7 @@ const EmployeeSignUp = () => {
             alt="Team collaboration"
             className="absolute inset-0 w-full h-full object-cover"
           />
-          
+
           {/* Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-primary/40 via-transparent to-transparent" />
 
@@ -294,9 +294,8 @@ const EmployeeSignUp = () => {
                   {[22, 23, 24, 25, 26, 27, 28].map((date) => (
                     <div
                       key={date}
-                      className={`py-1 rounded-lg text-primary-foreground ${
-                        date === 24 ? 'bg-card text-foreground font-semibold' : ''
-                      }`}
+                      className={`py-1 rounded-lg text-primary-foreground ${date === 24 ? 'bg-card text-foreground font-semibold' : ''
+                        }`}
                     >
                       {date}
                     </div>
@@ -343,4 +342,4 @@ const EmployeeSignUp = () => {
   );
 };
 
-export default EmployeeSignUp;
+export default Register;

@@ -1,14 +1,15 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { useMyTeams, useTeamTasks } from "@/hooks/useTeamLead";
+import NotificationPanel from "@/components/shared/NotificationPanel";
+
 import {
   Users,
   MessageSquare,
   CheckSquare,
   User,
   Bell,
-  Search,
+
   LogOut,
   Sun,
   Moon,
@@ -81,15 +82,7 @@ export const TeamLeadLayout = ({
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  // Fetch notifications (tasks needing review)
-  const { data: teamsData } = useMyTeams(!!user);
-  const teamCode = teamsData?.teams?.[0]?.team_code;
-
-  // Use a stable filter object
-  const taskFilters = { status: 'in_review' as const };
-  const { data: tasksData } = useTeamTasks(teamCode || "", taskFilters);
-  const notifications = tasksData?.tasks || [];
+  const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -183,14 +176,7 @@ export const TeamLeadLayout = ({
               >
                 <TeamTuneLogo showText={false} />
               </div>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search members..."
-                  className="pl-10 pr-4 py-2 bg-accent border-none rounded-lg text-sm w-64 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
+
             </div>
             <div className="flex items-center gap-4">
               {/* Theme Toggle */}
@@ -208,54 +194,12 @@ export const TeamLeadLayout = ({
               </Button>
 
               {/* Notifications */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="relative p-2 text-muted-foreground hover:text-foreground transition-colors">
-                    <Bell className="h-5 w-5" />
-                    {notifications.length > 0 && (
-                      <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-destructive ring-2 ring-background" />
-                    )}
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-80">
-                  <div className="flex items-center justify-between p-4 border-b border-border">
-                    <p className="font-semibold">Notifications</p>
-                    {notifications.length > 0 && (
-                      <span className="text-xs text-muted-foreground">
-                        {notifications.length} pending reviews
-                      </span>
-                    )}
-                  </div>
-                  <div className="max-h-[300px] overflow-y-auto">
-                    {notifications.length === 0 ? (
-                      <div className="p-4 text-center text-sm text-muted-foreground">
-                        No new notifications
-                      </div>
-                    ) : (
-                      notifications.map((task: any) => (
-                        <DropdownMenuItem
-                          key={task.task_code}
-                          className="flex flex-col items-start p-4 gap-1 cursor-pointer"
-                          onClick={() => navigate("/dashboard/team-lead/tasks")}
-                        >
-                          <div className="flex items-center gap-2 w-full">
-                            <span className="font-medium truncate flex-1">{task.title}</span>
-                            <span className="text-xs text-blue-500 bg-blue-500/10 px-1.5 py-0.5 rounded">
-                              Review
-                            </span>
-                          </div>
-                          <p className="text-xs text-muted-foreground line-clamp-1">
-                            {task.description || "No description"}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Assigned to: {task.assigned_to_name || "Unknown"}
-                          </p>
-                        </DropdownMenuItem>
-                      ))
-                    )}
-                  </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <button
+                onClick={() => setIsNotificationPanelOpen(true)}
+                className="relative p-2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Bell className="h-5 w-5" />
+              </button>
 
               {/* Profile Menu */}
               <DropdownMenu>
@@ -317,6 +261,12 @@ export const TeamLeadLayout = ({
           {children}
         </div>
       </main>
+
+      {/* Notification Panel */}
+      <NotificationPanel
+        isOpen={isNotificationPanelOpen}
+        onClose={() => setIsNotificationPanelOpen(false)}
+      />
 
       {/* Mobile Sidebar */}
       <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>

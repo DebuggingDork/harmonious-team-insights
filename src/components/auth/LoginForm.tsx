@@ -12,10 +12,10 @@ import { handleError } from "@/utils/errorHandler";
 import loginHero from "@/assets/login-hero.jpg";
 
 interface LoginFormProps {
-  role: string;
-  roleTitle: string;
-  roleIcon: React.ReactNode;
-  dashboardPath: string;
+  role?: string;
+  roleTitle?: string;
+  roleIcon?: React.ReactNode;
+  dashboardPath?: string;
 }
 
 const LoginForm = ({ role, roleTitle, roleIcon, dashboardPath }: LoginFormProps) => {
@@ -29,11 +29,11 @@ const LoginForm = ({ role, roleTitle, roleIcon, dashboardPath }: LoginFormProps)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Trim whitespace from email and password
     const trimmedEmail = email.trim();
     const trimmedPassword = password.trim();
-    
+
     if (!trimmedEmail || !trimmedPassword) {
       toast({
         title: "Missing fields",
@@ -46,24 +46,34 @@ const LoginForm = ({ role, roleTitle, roleIcon, dashboardPath }: LoginFormProps)
     setIsLoading(true);
 
     try {
-      await login(trimmedEmail, trimmedPassword);
-      
+      const user = await login(trimmedEmail, trimmedPassword);
+
       // Small delay to ensure state is updated before navigation
       await new Promise(resolve => setTimeout(resolve, 100));
-      
+
       toast({
         title: "Welcome back!",
-        description: `Signed in as ${roleTitle}`,
+        description: `Signed in as ${user.role || roleTitle}`,
       });
-      
-      // Navigate to dashboard (replace to avoid adding to history and prevent hash)
-      navigate(dashboardPath, { replace: true });
+
+      // Navigate to dashboard based on role or provided path
+      let targetPath = dashboardPath;
+
+      if (!targetPath && user?.role) {
+        const role = user.role.toLowerCase();
+        if (role === 'admin') targetPath = '/dashboard/admin';
+        else if (role === 'project_manager') targetPath = '/dashboard/project-manager';
+        else if (role === 'team_lead') targetPath = '/dashboard/team-lead';
+        else targetPath = '/dashboard/member';
+      }
+
+      navigate(targetPath || '/', { replace: true });
     } catch (error: any) {
       // Extract error message from various possible structures
       // API format: { error: { message: "Account disabled", code: "UNAUTHORIZED" } }
       // After API client transformation: { message: "Account disabled", status: 401 }
       let errorMessage = '';
-      
+
       // Debug: Log error structure in development
       if (process.env.NODE_ENV === 'development') {
         console.log('Login error structure:', {
@@ -73,7 +83,7 @@ const LoginForm = ({ role, roleTitle, roleIcon, dashboardPath }: LoginFormProps)
           responseData: error?.response?.data,
         });
       }
-      
+
       // Check all possible error structures (in order of likelihood)
       if (error?.message) {
         // Transformed ApiError message (most common after API client processing)
@@ -88,19 +98,19 @@ const LoginForm = ({ role, roleTitle, roleIcon, dashboardPath }: LoginFormProps)
         // Direct response message
         errorMessage = error.response.data.message;
       }
-      
+
       const lowerErrorMessage = errorMessage.toLowerCase();
-      
+
       // Check if the error is about blocked/disabled account
       // Check message content and error codes
-      const isBlockedAccount = 
-        lowerErrorMessage.includes('blocked') || 
+      const isBlockedAccount =
+        lowerErrorMessage.includes('blocked') ||
         lowerErrorMessage.includes('account has been blocked') ||
         lowerErrorMessage.includes('account disabled') ||
         lowerErrorMessage.includes('disabled') ||
         (error?.error?.code === 'UNAUTHORIZED' && lowerErrorMessage.includes('disabled')) ||
         (error?.status === 401 && lowerErrorMessage.includes('disabled'));
-      
+
       if (isBlockedAccount) {
         toast({
           title: "Account Blocked",
@@ -131,13 +141,6 @@ const LoginForm = ({ role, roleTitle, roleIcon, dashboardPath }: LoginFormProps)
           <Link to="/">
             <TeamTuneLogo />
           </Link>
-          <Link
-            to="/auth"
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Change role
-          </Link>
         </div>
 
         {/* Form Content */}
@@ -148,16 +151,17 @@ const LoginForm = ({ role, roleTitle, roleIcon, dashboardPath }: LoginFormProps)
             transition={{ duration: 0.5 }}
             className="w-full max-w-md"
           >
-            {/* Role Badge */}
-            <div className="flex items-center gap-3 mb-8">
-              <div className="p-3 bg-accent rounded-xl">
-                {roleIcon}
+            {roleTitle && (
+              <div className="flex items-center gap-3 mb-8">
+                <div className="p-3 bg-accent rounded-xl">
+                  {roleIcon}
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Logging in as</p>
+                  <h2 className="text-xl font-semibold text-foreground">{roleTitle}</h2>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Logging in as</p>
-                <h2 className="text-xl font-semibold text-foreground">{roleTitle}</h2>
-              </div>
-            </div>
+            )}
 
             {/* Welcome Text */}
             <div className="mb-8">
@@ -228,8 +232,15 @@ const LoginForm = ({ role, roleTitle, roleIcon, dashboardPath }: LoginFormProps)
             </form>
 
             <p className="text-center text-sm text-muted-foreground mt-8">
+              Don't have an account?{" "}
+              <Link to="/auth/register" className="text-primary hover:underline font-medium">
+                Register
+              </Link>
+            </p>
+
+            <p className="text-center text-xs text-muted-foreground mt-4 opacity-50">
               Need help?{" "}
-              <a href="mailto:support@teamtune.io" className="text-primary hover:underline">
+              <a href="mailto:support@teamtune.io" className="hover:underline">
                 Contact support
               </a>
             </p>
@@ -251,7 +262,7 @@ const LoginForm = ({ role, roleTitle, roleIcon, dashboardPath }: LoginFormProps)
             alt="Team collaboration"
             className="absolute inset-0 w-full h-full object-cover"
           />
-          
+
           {/* Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-primary/40 via-transparent to-transparent" />
 
@@ -292,9 +303,8 @@ const LoginForm = ({ role, roleTitle, roleIcon, dashboardPath }: LoginFormProps)
                   {[22, 23, 24, 25, 26, 27, 28].map((date, i) => (
                     <div
                       key={date}
-                      className={`py-1 rounded-lg text-primary-foreground ${
-                        date === 24 ? 'bg-card text-foreground font-semibold' : ''
-                      }`}
+                      className={`py-1 rounded-lg text-primary-foreground ${date === 24 ? 'bg-card text-foreground font-semibold' : ''
+                        }`}
                     >
                       {date}
                     </div>

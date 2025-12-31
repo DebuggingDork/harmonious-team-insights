@@ -153,7 +153,7 @@ const HeroSection = () => {
           transition={{ duration: 0.6, delay: 0.4 }}
           className="flex flex-col sm:flex-row items-center justify-center gap-4"
         >
-          <Link to="/auth/signup">
+          <Link to="/auth/register">
             <Button size="lg" className="rounded-full px-8 gap-2 group">
               Get Started for Free
               <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />

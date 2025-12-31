@@ -92,7 +92,7 @@ const CTASection = () => {
                     <Button
                       variant="link"
                       className="text-muted-foreground"
-                      onClick={() => navigate("/login")}
+                      onClick={() => navigate("/auth/login")}
                       type="button"
                     >
                       Already have an account? Sign in
