@@ -20,6 +20,7 @@ import {
   BarChart3,
   Settings,
   Trash2,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -105,6 +106,7 @@ const ProjectDetail = () => {
     user_ids: [],
     allocation_percentage: 100,
   });
+  const [memberSearchQuery, setMemberSearchQuery] = useState("");
 
   // Store project ID in state (from fetched project)
   const [projectId, setProjectId] = useState<string | null>(null);
@@ -249,6 +251,7 @@ const ProjectDetail = () => {
         user_ids: [],
         allocation_percentage: 100,
       });
+      setMemberSearchQuery("");
       setSelectedTeamCode(null);
     } catch (error) {
       toast({
@@ -417,8 +420,8 @@ const ProjectDetail = () => {
               <SelectContent>
                 <SelectItem value="planning">Planning</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="paused">Paused</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="on_hold">On Hold</SelectItem>
                 <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
@@ -929,8 +932,8 @@ const ProjectDetail = () => {
                 <SelectContent>
                   <SelectItem value="planning">Planning</SelectItem>
                   <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="paused">Paused</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="on_hold">On Hold</SelectItem>
                   <SelectItem value="cancelled">Cancelled</SelectItem>
                 </SelectContent>
               </Select>
@@ -958,7 +961,15 @@ const ProjectDetail = () => {
       </Dialog>
 
       {/* Add Members Dialog */}
-      <Dialog open={isAddMembersOpen} onOpenChange={setIsAddMembersOpen}>
+      <Dialog 
+        open={isAddMembersOpen} 
+        onOpenChange={(open) => {
+          setIsAddMembersOpen(open);
+          if (!open) {
+            setMemberSearchQuery("");
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add Team Members</DialogTitle>
@@ -969,11 +980,22 @@ const ProjectDetail = () => {
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label>Select Members</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name, email, or user code..."
+                  value={memberSearchQuery}
+                  onChange={(e) => setMemberSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
               <div className="max-h-60 overflow-y-auto space-y-2 border rounded-lg p-2">
                 {(() => {
                   // Get current team member IDs to exclude them
                   const currentMemberIds = selectedTeamMembersData?.members?.map((m: any) => m.user_id) || [];
                   const currentMemberCodes = selectedTeamMembersData?.members?.map((m: any) => m.user_code) || [];
+
+                  const searchLower = memberSearchQuery.toLowerCase();
 
                   return employees
                     .filter((emp: any) => {
@@ -990,6 +1012,16 @@ const ProjectDetail = () => {
                       if (currentMemberIds.includes(emp.id) || currentMemberIds.includes(emp.user_code) ||
                         currentMemberCodes.includes(emp.id) || currentMemberCodes.includes(emp.user_code)) {
                         return false;
+                      }
+
+                      // Filter by search query (name, email, or user_code)
+                      if (memberSearchQuery) {
+                        const matchesName = emp.full_name?.toLowerCase().includes(searchLower);
+                        const matchesEmail = emp.email?.toLowerCase().includes(searchLower);
+                        const matchesCode = emp.user_code?.toLowerCase().includes(searchLower);
+                        if (!matchesName && !matchesEmail && !matchesCode) {
+                          return false;
+                        }
                       }
 
                       return true;
@@ -1016,9 +1048,14 @@ const ProjectDetail = () => {
                             }
                           }}
                         />
-                        <span className="text-sm">
-                          {emp.full_name} ({emp.user_code})
-                        </span>
+                        <div className="flex flex-col flex-1">
+                          <span className="text-sm font-medium">
+                            {emp.full_name} ({emp.user_code})
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {emp.email}
+                          </span>
+                        </div>
                       </label>
                     ));
                 })()}

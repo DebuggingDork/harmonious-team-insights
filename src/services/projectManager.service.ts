@@ -99,12 +99,10 @@ export const updateProject = async (code: string, data: UpdateProjectRequest): P
  */
 export const updateProjectStatus = async (
   code: string,
-  status: string,
-  reason?: string
+  status: string
 ): Promise<Project> => {
-  const response = await apiClient.put<Project>(ENDPOINTS.PROJECT_MANAGER.PROJECTS.UPDATE_STATUS(code), {
+  const response = await apiClient.put<Project>(ENDPOINTS.PROJECT_MANAGER.PROJECTS.UPDATE(code), {
     status,
-    reason,
   });
   return response.data;
 };

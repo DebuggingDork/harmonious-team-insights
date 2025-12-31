@@ -38,8 +38,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ProjectManagerLayout } from "@/components/layouts/ProjectManagerLayout";
-import { useProjects, useEmployees, useCreateProject, useDeleteProject, useBulkDeleteProjects } from "@/hooks/useProjectManager";
+import { useProjects, useEmployees, useCreateProject, useDeleteProject, useBulkDeleteProjects, useUpdateProjectStatus } from "@/hooks/useProjectManager";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
@@ -52,6 +59,7 @@ const ProjectManagerDashboard = () => {
   const createProjectMutation = useCreateProject();
   const deleteProjectMutation = useDeleteProject();
   const bulkDeleteMutation = useBulkDeleteProjects();
+  const updateProjectStatusMutation = useUpdateProjectStatus();
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -400,7 +408,7 @@ const ProjectManagerDashboard = () => {
                           {project.status === "active" && (
                             <Activity className="h-3 w-3 text-emerald-500" />
                           )}
-                          {(project.status === "on_hold" || project.status === "cancelled") && (
+                          {(project.status === "paused" || project.status === "cancelled") && (
                             <AlertCircle className="h-3 w-3 text-destructive" />
                           )}
                         </div>
@@ -412,15 +420,45 @@ const ProjectManagerDashboard = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    <Badge
-                      variant={
-                        project.status === "active" ? "default" :
-                          project.status === "completed" ? "secondary" :
-                            project.status === "on_hold" ? "destructive" : "outline"
-                      }
+                    <Select
+                      value={project.status}
+                      onValueChange={(value: string) => {
+                        updateProjectStatusMutation.mutate(
+                          {
+                            code: project.project_code,
+                            status: value,
+                          },
+                          {
+                            onSuccess: () => {
+                              toast({
+                                title: "Success",
+                                description: "Project status updated successfully",
+                              });
+                            },
+                            onError: () => {
+                              toast({
+                                title: "Error",
+                                description: "Failed to update project status",
+                                variant: "destructive",
+                              });
+                            },
+                          }
+                        );
+                      }}
+                      disabled={updateProjectStatusMutation.isPending}
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      {project.status || "unknown"}
-                    </Badge>
+                      <SelectTrigger className="w-32 h-8" onClick={(e) => e.stopPropagation()}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent onClick={(e) => e.stopPropagation()}>
+                        <SelectItem value="planning">Planning</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="paused">Paused</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
                     {project.end_date && (
                       <span className="text-xs text-muted-foreground">
                         {format(new Date(project.end_date), "MMM d, yyyy")}

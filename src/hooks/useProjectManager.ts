@@ -141,8 +141,8 @@ export const useUpdateProjectStatus = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ code, status, reason }: { code: string; status: string; reason?: string }) =>
-      projectManagerService.updateProjectStatus(code, status, reason),
+    mutationFn: ({ code, status }: { code: string; status: string }) =>
+      projectManagerService.updateProjectStatus(code, status),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: projectManagerKeys.projects.detail(variables.code) });
       queryClient.invalidateQueries({ queryKey: projectManagerKeys.projects.all });

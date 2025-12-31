@@ -47,7 +47,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProjectManagerLayout } from "@/components/layouts/ProjectManagerLayout";
-import { useProjects, useCreateProject, useDeleteProject, useBulkDeleteProjects } from "@/hooks/useProjectManager";
+import { useProjects, useCreateProject, useDeleteProject, useBulkDeleteProjects, useUpdateProjectStatus } from "@/hooks/useProjectManager";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import type { CreateProjectRequest, ProjectStatus } from "@/api/types";
@@ -58,6 +58,7 @@ const ProjectsPage = () => {
   const createProjectMutation = useCreateProject();
   const deleteProjectMutation = useDeleteProject();
   const bulkDeleteMutation = useBulkDeleteProjects();
+  const updateProjectStatusMutation = useUpdateProjectStatus();
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -281,8 +282,8 @@ const ProjectsPage = () => {
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="planning">Planning</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="paused">Paused</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="on_hold">On Hold</SelectItem>
                 <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
@@ -403,27 +404,57 @@ const ProjectsPage = () => {
                         </p>
                       )}
 
-                      <div className="flex items-center justify-between">
-                        <Badge
-                          variant={
-                            project.status === "active"
-                              ? "default"
-                              : project.status === "completed"
-                              ? "secondary"
-                              : project.status === "on_hold"
-                              ? "destructive"
-                              : "outline"
-                          }
-                        >
-                          {project.status || "unknown"}
-                        </Badge>
-                        {project.status === "active" && (
-                          <Activity className="h-4 w-4 text-emerald-500" />
-                        )}
-                        {(project.status === "on_hold" ||
-                          project.status === "cancelled") && (
-                          <AlertCircle className="h-4 w-4 text-destructive" />
-                        )}
+                      <div 
+                        className="flex items-center justify-between gap-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="flex items-center gap-2 flex-1">
+                          {project.status === "active" && (
+                            <Activity className="h-4 w-4 text-emerald-500" />
+                          )}
+                          {(project.status === "paused" ||
+                            project.status === "cancelled") && (
+                            <AlertCircle className="h-4 w-4 text-destructive" />
+                          )}
+                          <Select
+                            value={project.status}
+                            onValueChange={(value: string) => {
+                              updateProjectStatusMutation.mutate(
+                                {
+                                  code: project.project_code,
+                                  status: value,
+                                },
+                                {
+                                  onSuccess: () => {
+                                    toast({
+                                      title: "Success",
+                                      description: "Project status updated successfully",
+                                    });
+                                  },
+                                  onError: () => {
+                                    toast({
+                                      title: "Error",
+                                      description: "Failed to update project status",
+                                      variant: "destructive",
+                                    });
+                                  },
+                                }
+                              );
+                            }}
+                            disabled={updateProjectStatusMutation.isPending}
+                          >
+                            <SelectTrigger className="w-full sm:w-36 h-8">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="planning">Planning</SelectItem>
+                              <SelectItem value="active">Active</SelectItem>
+                              <SelectItem value="paused">Paused</SelectItem>
+                              <SelectItem value="completed">Completed</SelectItem>
+                              <SelectItem value="cancelled">Cancelled</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
