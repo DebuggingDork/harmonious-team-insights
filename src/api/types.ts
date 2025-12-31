@@ -814,6 +814,7 @@ export interface EmployeeProfile {
   role: UserRole;
   status: UserStatus;
   department_id?: string;
+  created_at?: string;
 }
 
 export interface UpdateProfileRequest {

@@ -70,7 +70,7 @@ import { useToast } from "@/hooks/use-toast";
 import AdminUsers from "@/components/admin/AdminUsers";
 import AdminRoles from "@/components/admin/AdminRoles";
 import AdminSettings from "@/components/admin/AdminSettings";
-import NotificationPanel from "@/components/admin/NotificationPanel";
+import NotificationPanel from "@/components/common/NotificationPanel";
 import type { UserRole } from "@/api/types";
 
 const AdminDashboard = () => {

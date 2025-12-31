@@ -30,6 +30,7 @@ import TeamTuneLogo from "@/components/TeamTuneLogo";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
+import NotificationPanel from "@/components/common/NotificationPanel";
 
 interface ProjectManagerLayoutProps {
   children: ReactNode;
@@ -77,8 +78,8 @@ export const ProjectManagerLayout = ({
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -95,9 +96,6 @@ export const ProjectManagerLayout = ({
     }
   };
 
-  const toggleNotifications = () => {
-    setNotificationsEnabled(!notificationsEnabled);
-  };
 
   // Extract user name from email for display
   const getUserNameFromEmail = (email: string) => {
@@ -194,13 +192,11 @@ export const ProjectManagerLayout = ({
 
               {/* Notifications */}
               <button 
-                onClick={toggleNotifications}
+                onClick={() => setIsNotificationPanelOpen(true)}
                 className="relative p-2 text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Bell className="h-5 w-5" />
-                {notificationsEnabled && (
-                  <span className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full" />
-                )}
+                <span className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full" />
               </button>
 
               {/* Profile Menu */}
@@ -313,6 +309,12 @@ export const ProjectManagerLayout = ({
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Notification Panel */}
+      <NotificationPanel
+        isOpen={isNotificationPanelOpen}
+        onClose={() => setIsNotificationPanelOpen(false)}
+      />
     </div>
   );
 };

@@ -31,6 +31,7 @@ import TeamTuneLogo from "@/components/TeamTuneLogo";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
+import NotificationPanel from "@/components/common/NotificationPanel";
 
 interface MemberLayoutProps {
   children: ReactNode;
@@ -84,6 +85,7 @@ export const MemberLayout = ({
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -195,9 +197,11 @@ export const MemberLayout = ({
 
               {/* Notifications */}
               <button 
+                onClick={() => setIsNotificationPanelOpen(true)}
                 className="relative p-2 text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Bell className="h-5 w-5" />
+                <span className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full" />
               </button>
 
               {/* Profile Menu */}
@@ -310,6 +314,12 @@ export const MemberLayout = ({
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Notification Panel */}
+      <NotificationPanel
+        isOpen={isNotificationPanelOpen}
+        onClose={() => setIsNotificationPanelOpen(false)}
+      />
     </div>
   );
 };

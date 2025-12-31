@@ -23,7 +23,7 @@ const ProfilePage = () => {
         full_name: profile.full_name,
         email: profile.email,
         role: profile.role,
-        created_at: user?.created_at,
+        created_at: profile.created_at || user?.created_at,
       }
     : null;
 
