@@ -15,7 +15,7 @@ interface ProtectedRouteProps {
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   requiredRole,
-  redirectTo = '/auth',
+  redirectTo = '/auth/login',
 }) => {
   const { isAuthenticated, isLoading, user, hasRole } = useAuth();
 
@@ -46,7 +46,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // Check role-based access if required
   if (requiredRole) {
     const userHasRole = hasRole(requiredRole);
-    
+
     if (!userHasRole) {
       // Redirect to appropriate dashboard based on user role
       const roleDashboardMap: Record<UserRole, string> = {
@@ -57,7 +57,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       };
 
       const userDashboard = user?.role ? roleDashboardMap[user.role] : '/dashboard/member';
-      
+
       // Debug logging
       if (process.env.NODE_ENV === 'development') {
         console.log('Role mismatch - redirecting:', {
@@ -66,7 +66,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
           redirectingTo: userDashboard,
         });
       }
-      
+
       return <Navigate to={userDashboard} replace state={{ from: window.location.pathname }} />;
     }
   }
