@@ -64,6 +64,8 @@ import {
 import TeamTuneLogo from "@/components/TeamTuneLogo";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/contexts/ThemeContext";
+import { AdminSidebar } from "@/components/layouts/AdminSidebar";
+import { useCollapsibleSidebar } from "@/components/layouts/CollapsibleSidebar";
 import { usePendingUsers, useAllUsers, useApproveUser, useRejectUser, useUnblockUser, useBulkApproveUsers, useBulkRejectUsers } from "@/hooks/useAdmin";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -269,86 +271,150 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-0 h-full w-64 bg-card border-r border-border p-6 hidden lg:flex flex-col">
-        <Link to="/">
-          <TeamTuneLogo />
-        </Link>
-        
-        <nav className="mt-8 flex-1">
-          <div className="space-y-1">
-            <Link
-              to="/dashboard/admin"
-              className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg w-full text-left transition-colors ${
-                activeTab === "dashboard" 
-                  ? "text-foreground bg-accent" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              }`}
-            >
-              <BarChart3 className="h-4 w-4" />
-              Dashboard
-            </Link>
-            <Link
-              to="/dashboard/admin/users"
-              className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors ${
-                activeTab === "users" 
-                  ? "font-medium text-foreground bg-accent" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              }`}
-            >
-              <Users className="h-4 w-4" />
-              Users
-            </Link>
-            <Link
-              to="/dashboard/admin/roles"
-              className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors ${
-                activeTab === "roles" 
-                  ? "font-medium text-foreground bg-accent" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              }`}
-            >
-              <UserCog className="h-4 w-4" />
-              Roles
-            </Link>
-            <Link
-              to="/dashboard/admin/projects"
-              className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors text-muted-foreground hover:text-foreground hover:bg-accent"
-            >
-              <FolderKanban className="h-4 w-4" />
-              Projects
-            </Link>
-            <Link
-              to="/dashboard/admin/settings"
-              className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors text-muted-foreground hover:text-foreground hover:bg-accent"
-            >
-              <Settings className="h-4 w-4" />
-              Settings
-            </Link>
-            <Link
-              to="/dashboard/admin/plugins"
-              className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg w-full text-left transition-colors text-muted-foreground hover:text-foreground hover:bg-accent"
-            >
-              <Plug className="h-4 w-4" />
-              Plugins
-            </Link>
-          </div>
-        </nav>
+    <AdminSidebar onLogout={handleLogout}>
+      <AdminDashboardContent
+        user={user}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        navigate={navigate}
+        location={location}
+        toast={toast}
+        pendingUsers={pendingUsers}
+        isLoadingPending={isLoadingPending}
+        usersData={usersData}
+        isLoadingAll={isLoadingAll}
+        allUsers={allUsers}
+        approveUserMutation={approveUserMutation}
+        rejectUserMutation={rejectUserMutation}
+        unblockUserMutation={unblockUserMutation}
+        bulkApproveMutation={bulkApproveMutation}
+        bulkRejectMutation={bulkRejectMutation}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        isNotificationPanelOpen={isNotificationPanelOpen}
+        setIsNotificationPanelOpen={setIsNotificationPanelOpen}
+        isMobileMenuOpen={isMobileMenuOpen}
+        setIsMobileMenuOpen={setIsMobileMenuOpen}
+        isBulkMode={isBulkMode}
+        setIsBulkMode={setIsBulkMode}
+        selectedUserIds={selectedUserIds}
+        setSelectedUserIds={setSelectedUserIds}
+        isBulkApproveDialogOpen={isBulkApproveDialogOpen}
+        setIsBulkApproveDialogOpen={setIsBulkApproveDialogOpen}
+        isBulkRejectDialogOpen={isBulkRejectDialogOpen}
+        setIsBulkRejectDialogOpen={setIsBulkRejectDialogOpen}
+        bulkApproveRole={bulkApproveRole}
+        setBulkApproveRole={setBulkApproveRole}
+        bulkApproveDepartmentId={bulkApproveDepartmentId}
+        setBulkApproveDepartmentId={setBulkApproveDepartmentId}
+        bulkRejectReason={bulkRejectReason}
+        setBulkRejectReason={setBulkRejectReason}
+        bulkOperationResult={bulkOperationResult}
+        setBulkOperationResult={setBulkOperationResult}
+        isResultDialogOpen={isResultDialogOpen}
+        setIsResultDialogOpen={setIsResultDialogOpen}
+        userRoles={userRoles}
+        setUserRoles={setUserRoles}
+        handleRoleChange={handleRoleChange}
+        handleApprove={handleApprove}
+        handleReject={handleReject}
+        handleUnblock={handleUnblock}
+        handleToggleBulkMode={handleToggleBulkMode}
+        handleSelectAll={handleSelectAll}
+        handleToggleUser={handleToggleUser}
+        handleBulkApprove={handleBulkApprove}
+        handleBulkReject={handleBulkReject}
+        totalUsers={totalUsers}
+        activeUsers={activeUsers}
+        blockedUsers={blockedUsers}
+        pendingCount={pendingCount}
+        blockedUsersList={blockedUsersList}
+        roleDistribution={roleDistribution}
+        handleLogout={handleLogout}
+      />
+    </AdminSidebar>
+  );
+};
 
-        <div className="border-t border-border pt-4">
-          <Button 
-            variant="ghost" 
-            className="w-full justify-start gap-2 text-muted-foreground"
-            onClick={handleLogout}
-          >
-            <LogOut className="h-4 w-4" />
-            Sign out
-          </Button>
-        </div>
-      </aside>
+// Inner component that has access to the sidebar context
+const AdminDashboardContent = (props: any) => {
+  const {
+    user,
+    theme,
+    toggleTheme,
+    navigate,
+    location,
+    toast,
+    pendingUsers,
+    isLoadingPending,
+    usersData,
+    isLoadingAll,
+    allUsers,
+    approveUserMutation,
+    rejectUserMutation,
+    unblockUserMutation,
+    bulkApproveMutation,
+    bulkRejectMutation,
+    activeTab,
+    setActiveTab,
+    isNotificationPanelOpen,
+    setIsNotificationPanelOpen,
+    isMobileMenuOpen,
+    setIsMobileMenuOpen,
+    isBulkMode,
+    setIsBulkMode,
+    selectedUserIds,
+    setSelectedUserIds,
+    isBulkApproveDialogOpen,
+    setIsBulkApproveDialogOpen,
+    isBulkRejectDialogOpen,
+    setIsBulkRejectDialogOpen,
+    bulkApproveRole,
+    setBulkApproveRole,
+    bulkApproveDepartmentId,
+    setBulkApproveDepartmentId,
+    bulkRejectReason,
+    setBulkRejectReason,
+    bulkOperationResult,
+    setBulkOperationResult,
+    isResultDialogOpen,
+    setIsResultDialogOpen,
+    userRoles,
+    setUserRoles,
+    handleRoleChange,
+    handleApprove,
+    handleReject,
+    handleUnblock,
+    handleToggleBulkMode,
+    handleSelectAll,
+    handleToggleUser,
+    handleBulkApprove,
+    handleBulkReject,
+    totalUsers,
+    activeUsers,
+    blockedUsers,
+    pendingCount,
+    blockedUsersList,
+    roleDistribution,
+    handleLogout,
+  } = props;
 
+  // Sidebar state - now called inside the context provider
+  const { isSidebarExpanded, isDesktop } = useCollapsibleSidebar();
+
+  return (
+    <div className="min-h-screen bg-background relative">
       {/* Main Content */}
-      <main className="lg:ml-64">
+      <motion.main 
+        className="lg:ml-[64px]"
+        animate={{
+          marginLeft: isDesktop ? (isSidebarExpanded ? 256 : 64) : 0,
+        }}
+        transition={{
+          duration: 0.2,
+          ease: "easeInOut",
+        }}
+      >
         {/* Header */}
         <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-md border-b border-border/50 px-6 py-4 shadow-sm">
           <div className="flex items-center justify-between">
@@ -1032,7 +1098,7 @@ const AdminDashboard = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      </main>
+      </motion.main>
 
       {/* Mobile Sidebar */}
       <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
