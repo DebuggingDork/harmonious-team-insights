@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useMemo, useState, useEffect } from "react";
-import { 
-  User, 
+import { useState, useEffect } from "react";
+import {
+  User,
   TrendingUp,
   Calendar,
   Clock,
@@ -41,20 +41,9 @@ import { useMyProfile, useMyPerformance, useMyObservations, useMyGitActivity, us
 import { format } from "date-fns";
 import MyProgress from "@/components/employee/MyProgress";
 import MyFeedback from "@/components/employee/MyFeedback";
-
-// Helper function to calculate date ranges
-const getDateRanges = () => {
-  const endDate = new Date();
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - 42); // 6 weeks ago
-  
-  return {
-    period_start: startDate.toISOString().split('T')[0],
-    period_end: endDate.toISOString().split('T')[0],
-    start_date: startDate.toISOString().split('T')[0],
-    end_date: endDate.toISOString().split('T')[0],
-  };
-};
+// Import shared hooks
+import { useDateRanges } from "@/hooks/useDateRanges";
+import { ChartWrapper } from "@/components/shared";
 
 const chartConfig = {
   contributions: { label: "Contributions", color: "hsl(var(--primary))" },
@@ -67,7 +56,7 @@ const MemberDashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const dateRanges = useMemo(() => getDateRanges(), []);
+  const dateRanges = useDateRanges(42); // Last 6 weeks
   
   // Determine active tab from URL
   const getActiveTab = () => {

@@ -51,6 +51,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import type { CreateProjectRequest } from "@/api/types";
+import { StatCard } from "@/components/shared";
+import { getUserNameFromEmail } from "@/components/layouts/BaseLayout/hooks";
 
 const ProjectManagerDashboard = () => {
   const navigate = useNavigate();
@@ -233,20 +235,6 @@ const ProjectManagerDashboard = () => {
   }).length;
 
   const isLoading = isLoadingProjects || isLoadingEmployees;
-  // Extract user name from email for personalized greeting
-  const getUserNameFromEmail = (email: string) => {
-    if (!email) return "User";
-
-    // Extract name part before @ symbol
-    const namePart = email.split('@')[0];
-
-    // Split by dots, underscores, or hyphens and capitalize each part
-    const nameParts = namePart.split(/[._-]/).map(part =>
-      part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
-    );
-
-    return nameParts.join(' ');
-  };
 
   const { user } = useAuth();
   const displayName = user?.full_name || getUserNameFromEmail(user?.email || "");
@@ -263,70 +251,42 @@ const ProjectManagerDashboard = () => {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {[
-            {
-              label: "Active Projects",
-              value: activeProjects.toString(),
-              change: `${totalProjects} total`,
-              icon: FolderKanban,
-              color: "from-primary/20 to-primary/10",
-              iconColor: "text-primary",
-              isLoading: isLoadingProjects
-            },
-            {
-              label: "Team Members",
-              value: teamMembersCount.toString(),
-              change: "Across projects",
-              icon: Users,
-              color: "from-blue-500/20 to-blue-600/10",
-              iconColor: "text-blue-500",
-              isLoading: isLoadingEmployees
-            },
-            {
-              label: "On Track",
-              value: `${onTrackPercentage}%`,
-              change: "Projects",
-              icon: CheckCircle,
-              color: "from-emerald-500/20 to-emerald-600/10",
-              iconColor: "text-emerald-500",
-              isLoading: isLoadingProjects
-            },
-            {
-              label: "Deadlines",
-              value: upcomingDeadlines.toString(),
-              change: "This week",
-              icon: Clock,
-              color: "from-amber-500/20 to-amber-600/10",
-              iconColor: "text-amber-500",
-              isLoading: isLoadingProjects
-            },
-          ].map((stat, index) => (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="group relative bg-gradient-to-br from-card to-card/50 border border-border/50 rounded-2xl p-6 shadow-sm hover:shadow-lg hover:border-border transition-all duration-300 overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: `linear-gradient(135deg, ${stat.color.split(' ')[1]}, ${stat.color.split(' ')[3]})` }} />
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-4">
-                  <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
-                  <div className={`p-3 rounded-xl bg-gradient-to-br ${stat.color} backdrop-blur-sm shadow-lg`}>
-                    {stat.isLoading ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      <stat.icon className={`h-5 w-5 ${stat.iconColor}`} />
-                    )}
-                  </div>
-                </div>
-                <p className="text-3xl font-bold text-foreground tracking-tight">
-                  {stat.isLoading ? "..." : stat.value}
-                </p>
-                <p className="text-xs text-muted-foreground mt-2 font-medium">{stat.change}</p>
-              </div>
-            </motion.div>
-          ))}
+          <StatCard
+            label="Active Projects"
+            value={activeProjects}
+            icon={FolderKanban}
+            gradient="from-primary/20 to-primary/10"
+            iconColor="text-primary"
+            isLoading={isLoadingProjects}
+            index={0}
+          />
+          <StatCard
+            label="Team Members"
+            value={teamMembersCount}
+            icon={Users}
+            gradient="from-blue-500/20 to-blue-600/10"
+            iconColor="text-blue-500"
+            isLoading={isLoadingEmployees}
+            index={1}
+          />
+          <StatCard
+            label="On Track"
+            value={`${onTrackPercentage}%`}
+            icon={CheckCircle}
+            gradient="from-emerald-500/20 to-emerald-600/10"
+            iconColor="text-emerald-500"
+            isLoading={isLoadingProjects}
+            index={2}
+          />
+          <StatCard
+            label="Deadlines"
+            value={upcomingDeadlines}
+            icon={Clock}
+            gradient="from-amber-500/20 to-amber-600/10"
+            iconColor="text-amber-500"
+            isLoading={isLoadingProjects}
+            index={3}
+          />
         </div>
 
         {/* Projects List */}

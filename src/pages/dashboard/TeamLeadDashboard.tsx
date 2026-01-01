@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { TeamLeadLayout } from "@/components/layouts/TeamLeadLayout";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
   Users,
   TrendingUp,
@@ -69,20 +69,9 @@ import {
 import { format } from "date-fns";
 import type { ObservationCategory, ObservationRating, Observation } from "@/api/types";
 import { toast } from "@/hooks/use-toast";
-
-// Helper function to calculate date ranges
-const getDateRanges = () => {
-  const endDate = new Date();
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - 42); // 6 weeks ago
-
-  return {
-    period_start: startDate.toISOString().split('T')[0],
-    period_end: endDate.toISOString().split('T')[0],
-    start_date: startDate.toISOString().split('T')[0],
-    end_date: endDate.toISOString().split('T')[0],
-  };
-};
+// Import shared components and hooks
+import { useDateRanges } from "@/hooks/useDateRanges";
+import { StatCard, ChartWrapper } from "@/components/shared";
 
 const chartConfig = {
   contributions: { label: "Contributions", color: "hsl(var(--primary))" },
@@ -145,7 +134,7 @@ const TeamLeadDashboard = () => {
     return null;
   }, [teamsData]);
 
-  const dateRanges = useMemo(() => getDateRanges(), []);
+  const dateRanges = useDateRanges(42); // Last 6 weeks
 
   // Get team metrics (hook already handles enabled state based on teamCode)
   const { data: teamMetrics, isLoading: isLoadingMetrics } = useTeamMetrics(teamCode || "");

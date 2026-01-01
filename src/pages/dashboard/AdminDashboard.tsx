@@ -1,12 +1,12 @@
 import { motion } from "framer-motion";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { 
-  Shield, 
-  Users, 
-  Settings, 
-  BarChart3, 
-  Bell, 
+import {
+  Shield,
+  Users,
+  Settings,
+  BarChart3,
+  Bell,
   LogOut,
   UserCheck,
   UserX,
@@ -44,13 +44,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -74,6 +67,8 @@ import AdminRoles from "@/components/admin/AdminRoles";
 import AdminSettings from "@/components/admin/AdminSettings";
 import NotificationPanel from "@/components/common/NotificationPanel";
 import type { UserRole } from "@/api/types";
+// Import new shared components
+import { StatCard, RoleSelect } from "@/components/shared";
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
@@ -502,37 +497,42 @@ const AdminDashboardContent = (props: any) => {
 
               {/* System Overview Stats */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                {[
-                  { label: "Total Users", value: totalUsers.toString(), icon: Users, color: "from-blue-500/20 to-blue-600/10", iconColor: "text-blue-500", isLoading: isLoadingAll },
-                  { label: "Pending", value: pendingCount.toString(), icon: Clock, color: "from-amber-500/20 to-amber-600/10", iconColor: "text-amber-500", isLoading: isLoadingPending },
-                  { label: "Active", value: activeUsers.toString(), icon: UserCheck, color: "from-emerald-500/20 to-emerald-600/10", iconColor: "text-emerald-500", isLoading: isLoadingAll },
-                  { label: "Blocked", value: blockedUsers.toString(), icon: UserX, color: "from-red-500/20 to-red-600/10", iconColor: "text-red-500", isLoading: isLoadingAll },
-                ].map((stat, index) => (
-                  <motion.div
-                    key={stat.label}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: index * 0.1 }}
-                    className="group relative bg-gradient-to-br from-card to-card/50 border border-border/50 rounded-2xl p-6 shadow-sm hover:shadow-lg hover:border-border transition-all duration-300 overflow-hidden"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: `linear-gradient(135deg, ${stat.color.split(' ')[1]}, ${stat.color.split(' ')[3]})` }} />
-                    <div className="relative z-10">
-                      <div className="flex items-center justify-between mb-4">
-                        <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
-                        <div className={`p-3 rounded-xl bg-gradient-to-br ${stat.color} backdrop-blur-sm shadow-lg`}>
-                          {stat.isLoading ? (
-                            <Loader2 className="h-5 w-5 animate-spin" />
-                          ) : (
-                            <stat.icon className={`h-5 w-5 ${stat.iconColor}`} />
-                          )}
-                        </div>
-                      </div>
-                      <p className="text-3xl font-bold text-foreground tracking-tight">
-                        {stat.isLoading ? "..." : stat.value}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
+                <StatCard
+                  label="Total Users"
+                  value={totalUsers}
+                  icon={Users}
+                  gradient="from-blue-500/20 to-blue-600/10"
+                  iconColor="text-blue-500"
+                  isLoading={isLoadingAll}
+                  index={0}
+                />
+                <StatCard
+                  label="Pending"
+                  value={pendingCount}
+                  icon={Clock}
+                  gradient="from-amber-500/20 to-amber-600/10"
+                  iconColor="text-amber-500"
+                  isLoading={isLoadingPending}
+                  index={1}
+                />
+                <StatCard
+                  label="Active"
+                  value={activeUsers}
+                  icon={UserCheck}
+                  gradient="from-emerald-500/20 to-emerald-600/10"
+                  iconColor="text-emerald-500"
+                  isLoading={isLoadingAll}
+                  index={2}
+                />
+                <StatCard
+                  label="Blocked"
+                  value={blockedUsers}
+                  icon={UserX}
+                  gradient="from-red-500/20 to-red-600/10"
+                  iconColor="text-red-500"
+                  isLoading={isLoadingAll}
+                  index={3}
+                />
               </div>
 
               {/* Role Distribution */}
@@ -718,20 +718,11 @@ const AdminDashboardContent = (props: any) => {
                           </span>
                           {!isBulkMode && (
                             <div className="flex gap-2 items-center">
-                              <Select
+                              <RoleSelect
                                 value={userRoles[pendingUser.id] || "employee"}
-                                onValueChange={(value) => handleRoleChange(pendingUser.id, value as UserRole)}
-                              >
-                                <SelectTrigger className="w-[140px] h-8 text-xs">
-                                  <SelectValue placeholder="Select role" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="employee">Employee</SelectItem>
-                                  <SelectItem value="team_lead">Team Lead</SelectItem>
-                                  <SelectItem value="project_manager">Project Manager</SelectItem>
-                                  <SelectItem value="admin">Admin</SelectItem>
-                                </SelectContent>
-                              </Select>
+                                onChange={(value) => handleRoleChange(pendingUser.id, value)}
+                                size="sm"
+                              />
                               <Button 
                                 size="sm" 
                                 variant="outline" 
@@ -909,17 +900,11 @@ const AdminDashboardContent = (props: any) => {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Role (optional)</label>
-              <Select value={bulkApproveRole} onValueChange={(value) => setBulkApproveRole(value as UserRole)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="employee">Employee</SelectItem>
-                  <SelectItem value="team_lead">Team Lead</SelectItem>
-                  <SelectItem value="project_manager">Project Manager</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                </SelectContent>
-              </Select>
+              <RoleSelect
+                value={bulkApproveRole}
+                onChange={(value) => setBulkApproveRole(value)}
+                size="md"
+              />
               <p className="text-xs text-muted-foreground">Defaults to "employee" if not specified</p>
             </div>
             <div className="space-y-2">
