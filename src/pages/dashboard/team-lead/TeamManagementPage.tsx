@@ -12,9 +12,12 @@ import {
   ExternalLink,
   Settings,
   Github,
+  XCircle,
+  Plus,
 } from "lucide-react";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -33,9 +36,30 @@ import {
   useTeamPerformance,
   useTeamGitActivity,
   useLinkRepository,
+  useAvailableMembers,
+  useAddTeamMember,
+  useRemoveTeamMember,
+  useUpdateTeamMemberAllocation,
 } from "@/hooks/useTeamLead";
 import { toast } from "@/hooks/use-toast";
-import type { LinkRepositoryRequest } from "@/api/types";
+import type { LinkRepositoryRequest, AddTeamMemberRequest, UpdateTeamMemberAllocationRequest } from "@/api/types";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const TrendIcon = ({ trend }: { trend: string }) => {
   if (trend === "up") return <TrendingUp className="h-4 w-4 text-chart-1" />;
@@ -54,13 +78,12 @@ const ConsistencyIndicator = ({ level }: { level: string }) => {
       {[1, 2, 3].map((i) => (
         <div
           key={i}
-          className={`h-2 w-2 rounded-full ${
-            (level === "high" && i <= 3) ||
+          className={`h-2 w-2 rounded-full ${(level === "high" && i <= 3) ||
             (level === "medium" && i <= 2) ||
             (level === "low" && i <= 1)
-              ? colors[level as keyof typeof colors]
-              : "bg-muted"
-          }`}
+            ? colors[level as keyof typeof colors]
+            : "bg-muted"
+            }`}
         />
       ))}
     </div>
@@ -71,8 +94,16 @@ const TeamManagementPage = () => {
   const [isLinkRepoDialogOpen, setIsLinkRepoDialogOpen] = useState(false);
   const [repositoryUrl, setRepositoryUrl] = useState("");
 
+  // Member Management States
+  const [isAddMemberDialogOpen, setIsAddMemberDialogOpen] = useState(false);
+  const [isEditAllocationDialogOpen, setIsEditAllocationDialogOpen] = useState(false);
+  const [isRemoveMemberDialogOpen, setIsRemoveMemberDialogOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<any>(null);
+  const [addMemberData, setAddMemberData] = useState<AddTeamMemberRequest>({ user_code: '', allocation_percentage: 100 });
+  const [editAllocationData, setEditAllocationData] = useState<UpdateTeamMemberAllocationRequest>({ allocation_percentage: 100 });
+
   // Get teams
-  const { data: teamsData, isLoading: isLoadingTeams } = useMyTeams();
+  const { data: teamsData, isLoading: isLoadingTeams, refetch: refetchTeams } = useMyTeams();
   const teamCode = useMemo(() => {
     if (teamsData?.teams && teamsData.teams.length > 0) {
       return teamsData.teams[0].team_code;
@@ -117,6 +148,12 @@ const TeamManagementPage = () => {
 
   // Link repository mutation
   const linkRepositoryMutation = useLinkRepository();
+  const addMemberMutation = useAddTeamMember();
+  const removeMemberMutation = useRemoveTeamMember();
+  const updateAllocationMutation = useUpdateTeamMemberAllocation();
+
+  // Get available members
+  const { data: availableMembers, isLoading: isLoadingAvailableMembers } = useAvailableMembers(teamCode || "");
 
   // Transform team data
   const teamData = useMemo(() => {
@@ -138,14 +175,14 @@ const TeamManagementPage = () => {
         member.performance_score >= 80
           ? "up"
           : member.performance_score >= 60
-          ? "stable"
-          : "down";
+            ? "stable"
+            : "down";
       const consistency =
         member.performance_score >= 80
           ? "high"
           : member.performance_score >= 60
-          ? "medium"
-          : "low";
+            ? "medium"
+            : "low";
       const initials = member.user_name
         .split(" ")
         .map((n) => n[0])
@@ -162,6 +199,47 @@ const TeamManagementPage = () => {
       };
     });
   }, [teamPerformance]);
+
+  const handleAddMember = async () => {
+    if (!teamCode || !addMemberData.user_code) return;
+    try {
+      await addMemberMutation.mutateAsync({ teamCode, data: addMemberData });
+      toast({ title: "Success", description: "Member added successfully" });
+      setIsAddMemberDialogOpen(false);
+      setAddMemberData({ user_code: '', allocation_percentage: 100 });
+      refetchTeams();
+    } catch (error: any) {
+      toast({ title: "Error", description: error?.message || "Failed to add member", variant: "destructive" });
+    }
+  };
+
+  const handleUpdateAllocation = async () => {
+    if (!teamCode || !selectedMember) return;
+    try {
+      await updateAllocationMutation.mutateAsync({
+        teamCode,
+        userCode: selectedMember.user_code,
+        data: editAllocationData
+      });
+      toast({ title: "Success", description: "Allocation updated successfully" });
+      setIsEditAllocationDialogOpen(false);
+      refetchTeams();
+    } catch (error: any) {
+      toast({ title: "Error", description: error?.message || "Failed to update allocation", variant: "destructive" });
+    }
+  };
+
+  const handleRemoveMember = async () => {
+    if (!teamCode || !selectedMember) return;
+    try {
+      await removeMemberMutation.mutateAsync({ teamCode, userCode: selectedMember.user_code });
+      toast({ title: "Success", description: "Member removed successfully" });
+      setIsRemoveMemberDialogOpen(false);
+      refetchTeams();
+    } catch (error: any) {
+      toast({ title: "Error", description: error?.message || "Failed to remove member", variant: "destructive" });
+    }
+  };
 
   const handleLinkRepository = async () => {
     if (!teamCode || !repositoryUrl.trim()) {
@@ -322,12 +400,105 @@ const TeamManagementPage = () => {
           </Card>
         )}
 
-        {/* Member Performance Overview */}
+        {/* Team Members List */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-primary" />
+                Team Members
+              </CardTitle>
+              <Button size="sm" onClick={() => setIsAddMemberDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Member
+              </Button>
+            </div>
+            <CardDescription>Manage your team roster and their time allocations</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoadingTeams ? (
+              <div className="flex items-center justify-center p-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : !team?.members || team.members.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8 border-2 border-dashed rounded-lg">
+                No members in this team yet. Use the "Add Member" button to invite people.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-muted text-muted-foreground uppercase text-xs font-semibold">
+                    <tr>
+                      <th className="px-4 py-3 rounded-l-lg">Member</th>
+                      <th className="px-4 py-3 text-center">Allocation</th>
+                      <th className="px-4 py-3">Joined</th>
+                      <th className="px-4 py-3 text-right rounded-r-lg">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {team.members.map((member) => (
+                      <tr key={member.user_id} className="group hover:bg-accent/50 transition-colors">
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="h-9 w-9 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold">
+                              {member.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || '?'}
+                            </div>
+                            <div>
+                              <p className="font-medium">{member.full_name}</p>
+                              <p className="text-xs text-muted-foreground">{member.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 text-center">
+                          <Badge variant={member.allocation_percentage === 100 ? "default" : "secondary"}>
+                            {member.allocation_percentage}%
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-4 text-muted-foreground">
+                          {format(new Date(member.joined_at), 'MMM d, yyyy')}
+                        </td>
+                        <td className="px-4 py-4 text-right">
+                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-primary"
+                              onClick={() => {
+                                setSelectedMember(member);
+                                setEditAllocationData({ allocation_percentage: member.allocation_percentage || 100 });
+                                setIsEditAllocationDialogOpen(true);
+                              }}
+                            >
+                              <Settings className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive"
+                              onClick={() => {
+                                setSelectedMember(member);
+                                setIsRemoveMemberDialogOpen(true);
+                              }}
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Member Performance Overview section remains as is */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
-              Member Performance Overview
+              <Activity className="h-5 w-5 text-primary" />
+              Member Performance Overview (Last 6 Weeks)
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -341,7 +512,7 @@ const TeamManagementPage = () => {
               <div className="space-y-4">
                 {memberActivityData.map((member, index) => (
                   <motion.div
-                    key={member.name}
+                    key={member.userCode}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.1 }}
@@ -382,6 +553,122 @@ const TeamManagementPage = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Add Member Dialog */}
+      <Dialog open={isAddMemberDialogOpen} onOpenChange={setIsAddMemberDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Team Member</DialogTitle>
+            <DialogDescription>
+              Add a new member to your team. Only users not already on a team can be added.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Select Member</Label>
+              <Select
+                onValueChange={(val) => setAddMemberData(prev => ({ ...prev, user_code: val }))}
+                value={addMemberData.user_code}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a user..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {isLoadingAvailableMembers ? (
+                    <div className="p-2 flex items-center justify-center"><Loader2 className="h-4 w-4 animate-spin mr-2" /> Loading...</div>
+                  ) : !availableMembers || availableMembers.length === 0 ? (
+                    <div className="p-2 text-sm text-center text-muted-foreground">No available users found</div>
+                  ) : (
+                    availableMembers.map((user) => (
+                      <SelectItem key={user.user_code} value={user.user_code}>
+                        {user.full_name} ({user.email})
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="allocation">Allocation Percentage (%)</Label>
+              <Input
+                id="allocation"
+                type="number"
+                min="1"
+                max="100"
+                value={addMemberData.allocation_percentage}
+                onChange={(e) => setAddMemberData(prev => ({ ...prev, allocation_percentage: parseInt(e.target.value) }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddMemberDialogOpen(false)}>Cancel</Button>
+            <Button
+              onClick={handleAddMember}
+              disabled={addMemberMutation.isPending || !addMemberData.user_code}
+            >
+              {addMemberMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Add to Team
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Allocation Dialog */}
+      <Dialog open={isEditAllocationDialogOpen} onOpenChange={setIsEditAllocationDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update Allocation</DialogTitle>
+            <DialogDescription>
+              Update {selectedMember?.full_name}'s time allocation for this team.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-allocation">Allocation Percentage (%)</Label>
+              <Input
+                id="edit-allocation"
+                type="number"
+                min="1"
+                max="100"
+                value={editAllocationData.allocation_percentage}
+                onChange={(e) => setEditAllocationData({ allocation_percentage: parseInt(e.target.value) })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditAllocationDialogOpen(false)}>Cancel</Button>
+            <Button
+              onClick={handleUpdateAllocation}
+              disabled={updateAllocationMutation.isPending}
+            >
+              {updateAllocationMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Update Allocation
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Remove Member Alert Dialog */}
+      <AlertDialog open={isRemoveMemberDialogOpen} onOpenChange={setIsRemoveMemberDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove <strong>{selectedMember?.full_name}</strong> from your team. They will no longer have access to team resources.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRemoveMember}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {removeMemberMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Remove Member
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Link Repository Dialog */}
       <Dialog open={isLinkRepoDialogOpen} onOpenChange={setIsLinkRepoDialogOpen}>

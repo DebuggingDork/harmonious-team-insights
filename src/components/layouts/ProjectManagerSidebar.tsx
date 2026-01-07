@@ -49,3 +49,5 @@ export const ProjectManagerSidebar = ({ onLogout, children }: ProjectManagerSide
 // Re-export the hook for convenience
 export const useProjectManagerSidebar = useCollapsibleSidebar;
 
+
+

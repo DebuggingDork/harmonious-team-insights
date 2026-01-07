@@ -1669,3 +1669,232 @@ export interface CreateTaskTemplateRequest {
   default_tags?: string[];
 }
 
+// ============================================================================
+// SPRINT UPDATE/CLOSE TYPES
+// ============================================================================
+
+export interface UpdateSprintRequest {
+  name?: string;
+  description?: string;
+  start_date?: string;
+  end_date?: string;
+  capacity_hours?: number;
+  committed_hours?: number;
+  goals?: string[];
+  success_criteria?: string[];
+  status?: SprintStatus;
+}
+
+export interface CloseSprintRequest {
+  action: 'complete' | 'cancel';
+  notes?: string;
+}
+
+// ============================================================================
+// TEAM MEMBER MANAGEMENT TYPES
+// ============================================================================
+
+export interface AvailableMember {
+  user_id: string;
+  user_code: string;
+  full_name: string;
+  email: string;
+  avatar_url?: string | null;
+  role: UserRole;
+  department_id?: string;
+}
+
+export interface AvailableMembersResponse {
+  members: AvailableMember[];
+}
+
+export interface AddTeamMemberRequest {
+  user_code: string;
+  allocation_percentage?: number;
+}
+
+export interface UpdateTeamMemberAllocationRequest {
+  allocation_percentage: number;
+}
+
+export interface TeamMembershipResponse {
+  membership_id: string;
+  team_id: string;
+  user_id: string;
+  allocation_percentage: number;
+  joined_at: string;
+  user_code: string;
+  full_name: string;
+  email: string;
+  avatar_url?: string | null;
+  role: UserRole;
+}
+
+// ============================================================================
+// TIME ENTRY APPROVAL TYPES
+// ============================================================================
+
+export type TimeEntryApprovalStatus = 'pending' | 'approved' | 'rejected';
+
+export interface PendingTimeEntry extends TimeEntry {
+  approval_status: TimeEntryApprovalStatus;
+  approved_by?: string | null;
+  approved_at?: string | null;
+  rejection_reason?: string | null;
+  user?: {
+    user_id: string;
+    user_code: string;
+    full_name: string;
+    email: string;
+  };
+  task?: {
+    task_id: string;
+    task_code: string;
+    title: string;
+  };
+}
+
+export interface RejectTimeEntryRequest {
+  rejection_reason: string;
+}
+
+export interface BulkApproveTimeEntriesRequest {
+  time_codes: string[];
+}
+
+export interface BulkApproveTimeEntriesResponse {
+  approved: number;
+}
+
+// ============================================================================
+// FEEDBACK REQUEST TYPES (360-Degree Feedback)
+// ============================================================================
+
+export type FeedbackType = '360' | 'peer' | 'upward' | 'self' | 'customer';
+export type FeedbackStatus = 'draft' | 'active' | 'completed' | 'cancelled';
+export type ReviewerRelationship = 'peer' | 'direct_report' | 'manager' | 'customer' | 'other';
+export type ReviewerStatus = 'pending' | 'completed' | 'declined';
+export type QuestionType = 'rating' | 'text' | 'multiple_choice';
+
+export interface FeedbackReviewer {
+  user_id: string;
+  user_name?: string;
+  user_code?: string;
+  relationship: ReviewerRelationship;
+  status: ReviewerStatus;
+}
+
+export interface FeedbackQuestion {
+  id: number;
+  text: string;
+  type: QuestionType;
+  scale?: number; // For rating questions (e.g., 1-5, 1-10)
+  options?: string[]; // For multiple_choice questions
+}
+
+export interface FeedbackRequest {
+  id: string;
+  request_code: string;
+  subject_user_id: string;
+  subject_name?: string;
+  subject_user_code?: string;
+  requested_by: string;
+  requested_by_name?: string;
+  title: string;
+  description: string;
+  feedback_type: FeedbackType;
+  reviewers: FeedbackReviewer[];
+  questions: FeedbackQuestion[];
+  anonymous: boolean;
+  deadline: string;
+  status: FeedbackStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateFeedbackRequestData {
+  title: string;
+  description: string;
+  feedback_type: FeedbackType;
+  reviewers: {
+    user_id: string;
+    relationship: ReviewerRelationship;
+    status: ReviewerStatus;
+  }[];
+  questions: FeedbackQuestion[];
+  anonymous: boolean;
+  deadline: string;
+}
+
+export interface UpdateFeedbackRequestData {
+  title?: string;
+  description?: string;
+  reviewers?: {
+    user_id: string;
+    relationship: ReviewerRelationship;
+    status: ReviewerStatus;
+  }[];
+  questions?: FeedbackQuestion[];
+  anonymous?: boolean;
+  deadline?: string;
+  status?: FeedbackStatus;
+}
+
+export interface FeedbackRequestListItem {
+  id: string;
+  request_code: string;
+  subject_user_id: string;
+  subject_name: string;
+  subject_user_code: string;
+  title: string;
+  feedback_type: FeedbackType;
+  status: FeedbackStatus;
+  deadline: string;
+  created_at: string;
+  total_reviewers?: number;
+  completed_responses?: number;
+}
+
+export interface FeedbackResponse {
+  id: string;
+  reviewer_id?: string; // Hidden for anonymous feedback
+  reviewer_name?: string;
+  reviewer_user_code?: string;
+  responses: {
+    [questionId: string]: {
+      rating?: number;
+      text?: string;
+    };
+  };
+  overall_rating?: number;
+  submitted_at: string;
+}
+
+export interface FeedbackResponsesData {
+  responses: FeedbackResponse[];
+  total: number;
+  anonymous: boolean;
+}
+
+export interface QuestionSummary {
+  question: string;
+  ratings: number[];
+  avgRating: number;
+  textResponses: string[];
+}
+
+export interface FeedbackSummary {
+  request_code: string;
+  title: string;
+  status: FeedbackStatus;
+  deadline: string;
+  anonymous: boolean;
+  total_reviewers: number;
+  completed_responses: number;
+  pending_reviewers: number;
+  completion_rate: number;
+  average_overall_rating: number;
+  question_summaries: QuestionSummary[];
+}
+
+

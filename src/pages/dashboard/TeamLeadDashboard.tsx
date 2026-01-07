@@ -9,17 +9,24 @@ import {
   AlertTriangle,
   MessageSquare,
   Clock,
-
   User,
   Minus,
   Loader2,
   Edit,
   Trash2,
   Filter,
-  X
+  X,
+  AlertCircle,
+  FileText,
+  Calendar,
+  CheckCircle2,
+  ListTodo,
+  Flag,
+  ChevronRight,
+  Info
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 
 import {
@@ -48,13 +55,15 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Progress } from "@/components/ui/progress";
 
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { AreaChart, Area, XAxis, YAxis, BarChart, Bar } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, BarChart, Bar, ResponsiveContainer, Cell } from "recharts";
 import { useAuth } from "@/hooks/useAuth";
 import {
   useTeamMetrics,
@@ -64,10 +73,14 @@ import {
   useMemberObservations,
   useUpdateObservation,
   useDeleteObservation,
-  useMyTeams
+  useMyTeams,
+  useTeamDashboard,
+  useAcknowledgeAlert,
+  useResolveAlert,
+  useActiveFlags
 } from "@/hooks/useTeamLead";
-import { format } from "date-fns";
-import type { ObservationCategory, ObservationRating, Observation } from "@/api/types";
+import { format, differenceInDays } from "date-fns";
+import type { ObservationCategory, ObservationRating, Observation, Alert, Risk, Sprint } from "@/api/types";
 import { toast } from "@/hooks/use-toast";
 // Import shared components and hooks
 import { useDateRanges } from "@/hooks/useDateRanges";
@@ -161,6 +174,33 @@ const TeamLeadDashboard = () => {
   const createObservationMutation = useCreateObservation();
   const updateObservationMutation = useUpdateObservation();
   const deleteObservationMutation = useDeleteObservation();
+
+  // Dashboard Hook
+  const { data: dashboard, isLoading: isLoadingDashboard, refetch: refetchDashboard } = useTeamDashboard(teamCode || "");
+
+  // Alert Mutations
+  const acknowledgeAlert = useAcknowledgeAlert();
+  const resolveAlert = useResolveAlert();
+
+  const handleAcknowledgeAlert = async (alertCode: string) => {
+    try {
+      await acknowledgeAlert.mutateAsync({ alertCode });
+      toast({ title: "Success", description: "Alert acknowledged" });
+      refetchDashboard();
+    } catch (error: any) {
+      toast({ title: "Error", description: error?.message || "Failed to acknowledge alert", variant: "destructive" });
+    }
+  };
+
+  const handleResolveAlert = async (alertCode: string) => {
+    try {
+      await resolveAlert.mutateAsync({ alertCode });
+      toast({ title: "Success", description: "Alert resolved" });
+      refetchDashboard();
+    } catch (error: any) {
+      toast({ title: "Error", description: error?.message || "Failed to resolve alert", variant: "destructive" });
+    }
+  };
 
   // Fetch observations for all team members
   const allObservations = useMemo(() => {
@@ -318,7 +358,7 @@ const TeamLeadDashboard = () => {
         };
       });
     }
-    
+
     // Fallback to members from teams data if available
     const team = teamsData?.teams?.[0];
     if (team?.members && team.members.length > 0) {
@@ -334,7 +374,7 @@ const TeamLeadDashboard = () => {
         };
       });
     }
-    
+
     return [];
   }, [teamPerformance, teamsData]);
 
@@ -506,6 +546,203 @@ const TeamLeadDashboard = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Quick Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <StatCard
+            title="Active Tasks"
+            value={(dashboard?.quick_stats?.active_tasks ?? 0).toString()}
+            icon={ListTodo}
+            description="Across all current sprints"
+            trend={(dashboard?.quick_stats?.task_completion_rate ?? 0) > 80 ? "up" : "stable"}
+            trendLabel={`${dashboard?.quick_stats?.task_completion_rate ?? 0}% completion`}
+            isLoading={isLoadingDashboard}
+          />
+          <StatCard
+            title="Open Alerts"
+            value={(dashboard?.quick_stats?.open_alerts ?? 0).toString()}
+            icon={AlertCircle}
+            description="Pending lead attention"
+            status={(dashboard?.quick_stats?.open_alerts ?? 0) > 0 ? "critical" : "good"}
+            isLoading={isLoadingDashboard}
+          />
+          <StatCard
+            title="Team Risks"
+            value={(dashboard?.active_risks?.length ?? 0).toString()}
+            icon={AlertTriangle}
+            description="Identified project risks"
+            status={(dashboard?.active_risks?.length ?? 0) > 2 ? "at_risk" : "good"}
+            isLoading={isLoadingDashboard}
+          />
+          <StatCard
+            title="Health Score"
+            value={`${dashboard?.team_health?.score ?? 0}%`}
+            icon={Activity}
+            description={dashboard?.team_health?.status?.replace('_', ' ') ?? "No data"}
+            status={dashboard?.team_health?.status === 'good' ? 'good' : dashboard?.team_health?.status === 'at_risk' ? 'at_risk' : 'critical'}
+            isLoading={isLoadingDashboard}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
+          {/* Active Sprints */}
+          <Card className="xl:col-span-2">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-primary" />
+                  Active Sprints
+                </CardTitle>
+                <CardDescription>Track progress and capacity</CardDescription>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => window.location.href = '/dashboard/team-lead/sprints'}>
+                View All <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {isLoadingDashboard ? (
+                <div className="space-y-4">
+                  {[1, 2].map(i => <div key={i} className="h-20 bg-accent/20 animate-pulse rounded-lg" />)}
+                </div>
+              ) : !dashboard?.active_sprints || dashboard.active_sprints.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">No active sprints</p>
+              ) : (
+                <div className="space-y-6">
+                  {dashboard.active_sprints.map(sprint => (
+                    <div key={sprint.id} className="space-y-2">
+                      <div className="flex justify-between items-end">
+                        <div className="space-y-1">
+                          <p className="font-medium">{sprint.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Ends in {differenceInDays(new Date(sprint.end_date), new Date())} days
+                          </p>
+                        </div>
+                        <p className="text-sm font-semibold">{sprint.progress_percentage || 0}%</p>
+                      </div>
+                      <Progress value={sprint.progress_percentage || 0} className="h-2" />
+                      <div className="flex gap-4 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {sprint.capacity_hours}h Capacity</span>
+                        <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> {sprint.completed_tasks || 0} Tasks Done</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Action Items */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                Next Steps
+              </CardTitle>
+              <CardDescription>Priority actions required</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingDashboard ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map(i => <div key={i} className="h-12 bg-accent/20 animate-pulse rounded-lg" />)}
+                </div>
+              ) : !dashboard?.action_items || dashboard.action_items.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">No pending actions</p>
+              ) : (
+                <div className="space-y-3">
+                  {dashboard.action_items.map((item, i) => (
+                    <div key={i} className="flex gap-3 p-3 bg-accent/20 rounded-lg border border-border/50">
+                      <div className={`mt-1 h-2 w-2 rounded-full shrink-0 ${item.priority === 'high' ? 'bg-destructive' : 'bg-primary'
+                        }`} />
+                      <div>
+                        <p className="text-sm font-medium">{item.title}</p>
+                        <p className="text-xs text-muted-foreground">{item.description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          {/* Recent Alerts */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-destructive" />
+                Pending Alerts
+              </CardTitle>
+              {dashboard?.recent_alerts && dashboard.recent_alerts.length > 0 && (
+                <Badge variant="destructive">{dashboard.recent_alerts.length}</Badge>
+              )}
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {isLoadingDashboard ? (
+                  [1, 2].map(i => <div key={i} className="h-16 bg-accent/20 animate-pulse rounded-lg" />)
+                ) : !dashboard?.recent_alerts || dashboard.recent_alerts.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">All clear! No pending alerts.</p>
+                ) : (
+                  dashboard.recent_alerts.map(alert => (
+                    <div key={alert.id} className="p-3 bg-destructive/5 border border-destructive/20 rounded-lg space-y-2">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="text-sm font-semibold text-destructive">{alert.title}</p>
+                          <p className="text-xs text-muted-foreground">{alert.message}</p>
+                        </div>
+                        <Badge variant="outline" className="text-[10px] uppercase">{alert.severity}</Badge>
+                      </div>
+                      <div className="flex gap-2 justify-end">
+                        {alert.status === 'triggered' && (
+                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleAcknowledgeAlert(alert.alert_code)}>
+                            Acknowledge
+                          </Button>
+                        )}
+                        <Button size="sm" variant="outline" className="h-7 text-xs bg-destructive/10 text-destructive border-destructive/20" onClick={() => handleResolveAlert(alert.alert_code)}>
+                          Resolve
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Active Risks */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-amber-500" />
+                Project Risks
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {isLoadingDashboard ? (
+                  [1, 2].map(i => <div key={i} className="h-16 bg-accent/20 animate-pulse rounded-lg" />)
+                ) : !dashboard?.active_risks || dashboard.active_risks.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">No formal risks identified.</p>
+                ) : (
+                  dashboard.active_risks.map(risk => (
+                    <div key={risk.id} className="p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg">
+                      <div className="flex justify-between items-start mb-1">
+                        <p className="text-sm font-semibold text-amber-600">{risk.title}</p>
+                        <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-600">{risk.category}</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-2">{risk.mitigation_plan}</p>
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] font-bold uppercase text-amber-600">Impact: {risk.impact}</span>
+                        <span className="text-[10px] text-muted-foreground">Score: {risk.risk_score}</span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Execution Trends */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6" data-section="trends">

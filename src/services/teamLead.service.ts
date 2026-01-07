@@ -26,6 +26,8 @@ import type {
   TeamDashboardResponse,
   Sprint,
   CreateSprintRequest,
+  UpdateSprintRequest,
+  CloseSprintRequest,
   SprintDashboardResponse,
   TeamWorkloadResponse,
   CreateCapacityPlanRequest,
@@ -62,6 +64,23 @@ import type {
   // Profile types
   EmployeeProfile,
   UpdateProfileRequest,
+  // Team Member Management types
+  AvailableMember,
+  AvailableMembersResponse,
+  AddTeamMemberRequest,
+  UpdateTeamMemberAllocationRequest,
+  TeamMembershipResponse,
+  PendingTimeEntry,
+  RejectTimeEntryRequest,
+  BulkApproveTimeEntriesRequest,
+  BulkApproveTimeEntriesResponse,
+  // Feedback Request types
+  FeedbackRequest as FeedbackRequestType,
+  CreateFeedbackRequestData,
+  UpdateFeedbackRequestData,
+  FeedbackRequestListItem,
+  FeedbackResponsesData,
+  FeedbackSummary,
 } from '@/api/types';
 
 // ============================================================================
@@ -93,7 +112,7 @@ export const updateTeamLeadProfile = async (data: UpdateProfileRequest): Promise
  */
 export const getMyTeams = async (): Promise<MyTeamsResponse> => {
   const response = await apiClient.get<TeamLeadTeam[] | MyTeamsResponse>(ENDPOINTS.TEAM_LEAD.MY_TEAMS);
-  
+
   // Handle case where API returns array directly instead of wrapped object
   if (Array.isArray(response.data)) {
     return {
@@ -101,7 +120,7 @@ export const getMyTeams = async (): Promise<MyTeamsResponse> => {
       total: response.data.length,
     };
   }
-  
+
   return response.data;
 };
 
@@ -138,11 +157,115 @@ export const createSprint = async (data: CreateSprintRequest): Promise<Sprint> =
 };
 
 /**
+ * Get all sprints for a team
+ */
+export const getTeamSprints = async (teamCode: string): Promise<Sprint[]> => {
+  const response = await apiClient.get<Sprint[] | { sprints: Sprint[] }>(ENDPOINTS.TEAM_LEAD.SPRINTS.LIST(teamCode));
+
+  // Handle both array and wrapped response formats
+  if (Array.isArray(response.data)) {
+    return response.data;
+  }
+
+  // If response is an object with sprints property
+  if (response.data && typeof response.data === 'object' && 'sprints' in response.data) {
+    return response.data.sprints || [];
+  }
+
+  // Fallback to empty array if unexpected format
+  return [];
+};
+
+/**
+ * Get a specific sprint by code
+ */
+export const getSprint = async (sprintCode: string): Promise<Sprint> => {
+  const response = await apiClient.get<Sprint>(ENDPOINTS.TEAM_LEAD.SPRINTS.GET(sprintCode));
+  return response.data;
+};
+
+/**
+ * Update sprint details
+ */
+export const updateSprint = async (sprintCode: string, data: UpdateSprintRequest): Promise<Sprint> => {
+  const response = await apiClient.put<Sprint>(ENDPOINTS.TEAM_LEAD.SPRINTS.UPDATE(sprintCode), data);
+  return response.data;
+};
+
+/**
+ * Close a sprint (complete or cancel)
+ */
+export const closeSprint = async (sprintCode: string, data: CloseSprintRequest): Promise<Sprint> => {
+  const response = await apiClient.post<Sprint>(ENDPOINTS.TEAM_LEAD.SPRINTS.CLOSE(sprintCode), data);
+  return response.data;
+};
+
+/**
  * Get sprint dashboard with metrics and burndown data
  */
 export const getSprintDashboard = async (sprintCode: string): Promise<SprintDashboardResponse> => {
   const response = await apiClient.get<SprintDashboardResponse>(
     ENDPOINTS.TEAM_LEAD.SPRINTS.DASHBOARD(sprintCode)
+  );
+  return response.data;
+};
+
+// ============================================================================
+// TEAM MEMBER MANAGEMENT
+// ============================================================================
+
+/**
+ * Get available members who can be added to the team
+ */
+export const getAvailableMembers = async (teamCode: string): Promise<AvailableMember[]> => {
+  const response = await apiClient.get<AvailableMember[] | AvailableMembersResponse>(
+    ENDPOINTS.TEAM_LEAD.TEAM_MEMBERS.AVAILABLE(teamCode)
+  );
+  // Handle both array and wrapped response formats
+  if (Array.isArray(response.data)) {
+    return response.data;
+  }
+  return response.data.members || [];
+};
+
+/**
+ * Add a new member to the team
+ */
+export const addTeamMember = async (
+  teamCode: string,
+  data: AddTeamMemberRequest
+): Promise<TeamMembershipResponse> => {
+  const response = await apiClient.post<TeamMembershipResponse>(
+    ENDPOINTS.TEAM_LEAD.TEAM_MEMBERS.ADD(teamCode),
+    data
+  );
+  return response.data;
+};
+
+/**
+ * Remove a member from the team
+ */
+export const removeTeamMember = async (
+  teamCode: string,
+  userCode: string
+): Promise<{ message: string }> => {
+  const response = await apiClient.delete<{ message: string }>(
+    ENDPOINTS.TEAM_LEAD.TEAM_MEMBERS.REMOVE(teamCode, userCode)
+  );
+  return response.data;
+};
+
+/**
+ * Update a team member's allocation percentage
+ */
+export const updateTeamMemberAllocation = async (
+  teamCode: string,
+  userCode: string,
+  data: UpdateTeamMemberAllocationRequest
+): Promise<TeamMembershipResponse> => {
+  const response = await apiClient.put<TeamMembershipResponse>(
+    ENDPOINTS.TEAM_LEAD.TEAM_MEMBERS.UPDATE(teamCode, userCode),
+    data
   );
   return response.data;
 };
@@ -369,6 +492,33 @@ export const getMemberObservations = async (
 };
 
 /**
+ * Get all observations for a team (all members)
+ */
+export const getTeamObservations = async (
+  teamCode: string,
+  params?: {
+    page?: number;
+    limit?: number;
+    category?: string;
+    rating?: string;
+  }
+): Promise<ObservationsResponse> => {
+  const queryParams = new URLSearchParams();
+  if (params?.page) queryParams.append('page', params.page.toString());
+  if (params?.limit) queryParams.append('limit', params.limit.toString());
+  if (params?.category) queryParams.append('category', params.category);
+  if (params?.rating) queryParams.append('rating', params.rating);
+
+  const queryString = queryParams.toString();
+  const url = queryString
+    ? `${ENDPOINTS.TEAM_LEAD.OBSERVATIONS.LIST_ALL_TEAM(teamCode)}?${queryString}`
+    : ENDPOINTS.TEAM_LEAD.OBSERVATIONS.LIST_ALL_TEAM(teamCode);
+
+  const response = await apiClient.get<ObservationsResponse>(url);
+  return response.data;
+};
+
+/**
  * Get observation by code
  */
 export const getObservation = async (observationCode: string): Promise<Observation> => {
@@ -560,6 +710,14 @@ export const createTaskTemplate = async (
   return response.data;
 };
 
+/**
+ * Get task templates
+ */
+export const getTaskTemplates = async (teamCode: string): Promise<TaskTemplate[]> => {
+  const response = await apiClient.get<TaskTemplate[]>(ENDPOINTS.TEAM_LEAD.TASK_TEMPLATES.LIST(teamCode));
+  return response.data;
+};
+
 // ============================================================================
 // METRICS & GIT ACTIVITY
 // ============================================================================
@@ -604,3 +762,183 @@ export const getMemberGitActivity = async (
   const response = await apiClient.get<MemberGitActivityResponse>(url);
   return response.data;
 };
+
+// ============================================================================
+// TIME ENTRY APPROVAL
+// ============================================================================
+
+/**
+ * Get all pending time entries for a team
+ */
+export const getPendingTimeEntries = async (
+  teamCode: string,
+  params?: { start_date?: string; end_date?: string }
+): Promise<PendingTimeEntry[]> => {
+  const queryParams = new URLSearchParams();
+  if (params?.start_date) queryParams.append('start_date', params.start_date);
+  if (params?.end_date) queryParams.append('end_date', params.end_date);
+
+  const queryString = queryParams.toString();
+  const url = queryString
+    ? `${ENDPOINTS.TEAM_LEAD.TIME_ENTRIES.LIST_PENDING(teamCode)}?${queryString}`
+    : ENDPOINTS.TEAM_LEAD.TIME_ENTRIES.LIST_PENDING(teamCode);
+
+  const response = await apiClient.get<PendingTimeEntry[]>(url);
+  return response.data;
+};
+
+/**
+ * Get pending time entries for a specific team member
+ */
+export const getMemberPendingTimeEntries = async (
+  teamCode: string,
+  userCode: string,
+  params?: { start_date?: string; end_date?: string }
+): Promise<PendingTimeEntry[]> => {
+  const queryParams = new URLSearchParams();
+  if (params?.start_date) queryParams.append('start_date', params.start_date);
+  if (params?.end_date) queryParams.append('end_date', params.end_date);
+
+  const queryString = queryParams.toString();
+  const url = queryString
+    ? `${ENDPOINTS.TEAM_LEAD.TIME_ENTRIES.MEMBER_PENDING(teamCode, userCode)}?${queryString}`
+    : ENDPOINTS.TEAM_LEAD.TIME_ENTRIES.MEMBER_PENDING(teamCode, userCode);
+
+  const response = await apiClient.get<PendingTimeEntry[]>(url);
+  return response.data;
+};
+
+/**
+ * Approve a time entry
+ */
+export const approveTimeEntry = async (
+  teamCode: string,
+  timeCode: string
+): Promise<PendingTimeEntry> => {
+  const response = await apiClient.put<PendingTimeEntry>(
+    ENDPOINTS.TEAM_LEAD.TIME_ENTRIES.APPROVE(teamCode, timeCode)
+  );
+  return response.data;
+};
+
+/**
+ * Reject a time entry
+ */
+export const rejectTimeEntry = async (
+  teamCode: string,
+  timeCode: string,
+  data: RejectTimeEntryRequest
+): Promise<PendingTimeEntry> => {
+  const response = await apiClient.put<PendingTimeEntry>(
+    ENDPOINTS.TEAM_LEAD.TIME_ENTRIES.REJECT(teamCode, timeCode),
+    data
+  );
+  return response.data;
+};
+
+/**
+ * Bulk approve time entries
+ */
+export const bulkApproveTimeEntries = async (
+  teamCode: string,
+  data: BulkApproveTimeEntriesRequest
+): Promise<BulkApproveTimeEntriesResponse> => {
+  const response = await apiClient.post<BulkApproveTimeEntriesResponse>(
+    ENDPOINTS.TEAM_LEAD.TIME_ENTRIES.BULK_APPROVE(teamCode),
+    data
+  );
+  return response.data;
+};
+
+// ============================================================================
+// FEEDBACK REQUESTS (360-Degree Feedback)
+// ============================================================================
+
+/**
+ * Create a new feedback request for a team member
+ */
+export const createFeedbackRequestForMember = async (
+  userCode: string,
+  data: CreateFeedbackRequestData
+): Promise<FeedbackRequestType> => {
+  const response = await apiClient.post<FeedbackRequestType>(
+    ENDPOINTS.TEAM_LEAD.FEEDBACK_REQUESTS.CREATE(userCode),
+    data
+  );
+  return response.data;
+};
+
+/**
+ * Get all feedback requests created by the team lead
+ */
+export const getAllFeedbackRequests = async (): Promise<FeedbackRequestListItem[]> => {
+  const response = await apiClient.get<FeedbackRequestListItem[]>(
+    ENDPOINTS.TEAM_LEAD.FEEDBACK_REQUESTS.LIST_ALL
+  );
+  return response.data;
+};
+
+/**
+ * Get all feedback requests for members of a specific team
+ */
+export const getTeamFeedbackRequests = async (teamCode: string): Promise<FeedbackRequestListItem[]> => {
+  const response = await apiClient.get<FeedbackRequestListItem[]>(
+    ENDPOINTS.TEAM_LEAD.FEEDBACK_REQUESTS.LIST_BY_TEAM(teamCode)
+  );
+  return response.data;
+};
+
+/**
+ * Get details of a specific feedback request
+ */
+export const getFeedbackRequest = async (requestCode: string): Promise<FeedbackRequestType> => {
+  const response = await apiClient.get<FeedbackRequestType>(
+    ENDPOINTS.TEAM_LEAD.FEEDBACK_REQUESTS.GET(requestCode)
+  );
+  return response.data;
+};
+
+/**
+ * Update an existing feedback request
+ */
+export const updateFeedbackRequest = async (
+  requestCode: string,
+  data: UpdateFeedbackRequestData
+): Promise<FeedbackRequestType> => {
+  const response = await apiClient.put<FeedbackRequestType>(
+    ENDPOINTS.TEAM_LEAD.FEEDBACK_REQUESTS.UPDATE(requestCode),
+    data
+  );
+  return response.data;
+};
+
+/**
+ * Delete/cancel a feedback request
+ */
+export const deleteFeedbackRequest = async (requestCode: string): Promise<{ message: string }> => {
+  const response = await apiClient.delete<{ message: string }>(
+    ENDPOINTS.TEAM_LEAD.FEEDBACK_REQUESTS.DELETE(requestCode)
+  );
+  return response.data;
+};
+
+/**
+ * Get all submitted responses for a feedback request
+ */
+export const getFeedbackResponses = async (requestCode: string): Promise<FeedbackResponsesData> => {
+  const response = await apiClient.get<FeedbackResponsesData>(
+    ENDPOINTS.TEAM_LEAD.FEEDBACK_REQUESTS.GET_RESPONSES(requestCode)
+  );
+  return response.data;
+};
+
+/**
+ * Get aggregated summary of all feedback responses
+ */
+export const getFeedbackSummary = async (requestCode: string): Promise<FeedbackSummary> => {
+  const response = await apiClient.get<FeedbackSummary>(
+    ENDPOINTS.TEAM_LEAD.FEEDBACK_REQUESTS.GET_SUMMARY(requestCode)
+  );
+  return response.data;
+};
+

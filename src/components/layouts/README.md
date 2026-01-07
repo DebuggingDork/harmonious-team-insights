@@ -158,3 +158,5 @@ When you update the design in `CollapsibleSidebar.tsx`, it will automatically re
 
 This ensures consistency across all dashboards and makes maintenance easy.
 
+
+

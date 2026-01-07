@@ -102,7 +102,28 @@ export const ENDPOINTS = {
     // Sprint Management
     SPRINTS: {
       CREATE: `${API_BASE}${API_PREFIX}/team-lead/sprints`,
+      LIST: (teamCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/sprints`,
+      GET: (sprintCode: string) => `${API_BASE}${API_PREFIX}/team-lead/sprints/${sprintCode}`,
+      UPDATE: (sprintCode: string) => `${API_BASE}${API_PREFIX}/team-lead/sprints/${sprintCode}`,
+      CLOSE: (sprintCode: string) => `${API_BASE}${API_PREFIX}/team-lead/sprints/${sprintCode}/close`,
       DASHBOARD: (sprintCode: string) => `${API_BASE}${API_PREFIX}/team-lead/sprints/${sprintCode}/dashboard`,
+    },
+
+    // Team Member Management
+    TEAM_MEMBERS: {
+      AVAILABLE: (teamCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/available-members`,
+      ADD: (teamCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/members`,
+      REMOVE: (teamCode: string, userCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/members/${userCode}`,
+      UPDATE: (teamCode: string, userCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/members/${userCode}`,
+    },
+
+    // Time Entry Approval
+    TIME_ENTRIES: {
+      LIST_PENDING: (teamCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/time-entries`,
+      MEMBER_PENDING: (teamCode: string, userCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/members/${userCode}/time-entries`,
+      APPROVE: (teamCode: string, timeCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/time-entries/${timeCode}/approve`,
+      REJECT: (teamCode: string, timeCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/time-entries/${timeCode}/reject`,
+      BULK_APPROVE: (teamCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/time-entries/bulk-approve`,
     },
 
     // Task Management
@@ -141,9 +162,22 @@ export const ENDPOINTS = {
         `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/members/${userCode}/observations`,
       LIST: (teamCode: string, userCode: string) =>
         `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/members/${userCode}/observations`,
+      LIST_ALL_TEAM: (teamCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/observations`,
       GET: (observationCode: string) => `${API_BASE}${API_PREFIX}/team-lead/observations/${observationCode}`,
       UPDATE: (observationCode: string) => `${API_BASE}${API_PREFIX}/team-lead/observations/${observationCode}`,
       DELETE: (observationCode: string) => `${API_BASE}${API_PREFIX}/team-lead/observations/${observationCode}`,
+    },
+
+    // Feedback Requests (360-Degree Feedback)
+    FEEDBACK_REQUESTS: {
+      CREATE: (userCode: string) => `${API_BASE}${API_PREFIX}/team-lead/members/${userCode}/feedback-requests`,
+      LIST_ALL: `${API_BASE}${API_PREFIX}/team-lead/feedback-requests`,
+      LIST_BY_TEAM: (teamCode: string) => `${API_BASE}${API_PREFIX}/team-lead/teams/${teamCode}/feedback-requests`,
+      GET: (requestCode: string) => `${API_BASE}${API_PREFIX}/team-lead/feedback-requests/${requestCode}`,
+      UPDATE: (requestCode: string) => `${API_BASE}${API_PREFIX}/team-lead/feedback-requests/${requestCode}`,
+      DELETE: (requestCode: string) => `${API_BASE}${API_PREFIX}/team-lead/feedback-requests/${requestCode}`,
+      GET_RESPONSES: (requestCode: string) => `${API_BASE}${API_PREFIX}/team-lead/feedback-requests/${requestCode}/responses`,
+      GET_SUMMARY: (requestCode: string) => `${API_BASE}${API_PREFIX}/team-lead/feedback-requests/${requestCode}/summary`,
     },
 
     // Communication
