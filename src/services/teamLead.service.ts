@@ -591,6 +591,28 @@ export const logTeamDecision = async (
   return response.data;
 };
 
+/**
+ * Get team decisions
+ */
+export const getTeamDecisions = async (teamCode: string): Promise<TeamDecision[]> => {
+  const response = await apiClient.get<TeamDecision[] | { decisions: TeamDecision[] }>(
+    ENDPOINTS.TEAM_LEAD.DECISIONS.LIST(teamCode)
+  );
+
+  // Handle both array and wrapped response formats
+  if (Array.isArray(response.data)) {
+    return response.data;
+  }
+
+  // If response is an object with decisions property
+  if (response.data && typeof response.data === 'object' && 'decisions' in response.data) {
+    return response.data.decisions || [];
+  }
+
+  // Fallback to empty array if unexpected format
+  return [];
+};
+
 // ============================================================================
 // MONITORING & ALERTS
 // ============================================================================

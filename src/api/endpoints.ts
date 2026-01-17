@@ -295,5 +295,19 @@ export const ENDPOINTS = {
   GITHUB: {
     OAUTH_CALLBACK: `${API_BASE}${API_PREFIX}/github/oauth/callback`,
   },
+
+  // Notifications - Role-based endpoints
+  NOTIFICATIONS: {
+    // Helper to get role-specific base path
+    forRole: (role: 'employee' | 'team-lead' | 'project-manager' | 'admin') => ({
+      LIST: `${API_BASE}${API_PREFIX}/${role}/notifications`,
+      UNREAD_COUNT: `${API_BASE}${API_PREFIX}/${role}/notifications/unread-count`,
+      GET: (notificationId: string) => `${API_BASE}${API_PREFIX}/${role}/notifications/${notificationId}`,
+      MARK_READ: (notificationId: string) => `${API_BASE}${API_PREFIX}/${role}/notifications/${notificationId}/read`,
+      MARK_ALL_READ: `${API_BASE}${API_PREFIX}/${role}/notifications/read-all`,
+      DELETE: (notificationId: string) => `${API_BASE}${API_PREFIX}/${role}/notifications/${notificationId}`,
+      DELETE_ALL_READ: `${API_BASE}${API_PREFIX}/${role}/notifications/read`,
+    }),
+  },
 } as const;
 

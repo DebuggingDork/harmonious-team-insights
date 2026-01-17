@@ -128,6 +128,9 @@ export const teamLeadKeys = {
   // Templates
   templates: (teamCode: string) => ['team-lead', 'templates', teamCode] as const,
 
+  // Decisions
+  decisions: (teamCode: string) => ['team-lead', 'decisions', teamCode] as const,
+
   // Feedback Requests
   feedbackRequests: {
     all: ['team-lead', 'feedback-requests'] as const,
@@ -484,7 +487,8 @@ export const useCreateTask = () => {
     mutationFn: ({ teamCode, data }: { teamCode: string; data: CreateTaskRequest }) =>
       teamLeadService.createTask(teamCode, data),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: teamLeadKeys.tasks.list(variables.teamCode) });
+      // Invalidate all task queries
+      queryClient.invalidateQueries({ queryKey: teamLeadKeys.tasks.all });
     },
     onError: handleError,
   });
@@ -792,12 +796,28 @@ export const useScheduleOneOnOne = () => {
 };
 
 /**
+ * Get team decisions
+ */
+export const useTeamDecisions = (teamCode: string) => {
+  return useQuery({
+    queryKey: teamLeadKeys.decisions(teamCode),
+    queryFn: () => teamLeadService.getTeamDecisions(teamCode),
+    enabled: !!teamCode,
+  });
+};
+
+/**
  * Log team decision mutation
  */
 export const useLogTeamDecision = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: ({ teamCode, data }: { teamCode: string; data: CreateDecisionRequest }) =>
       teamLeadService.logTeamDecision(teamCode, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: teamLeadKeys.decisions(variables.teamCode) });
+    },
     onError: handleError,
   });
 };

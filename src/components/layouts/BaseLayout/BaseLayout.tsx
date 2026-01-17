@@ -5,6 +5,7 @@ import NotificationPanel from "@/components/common/NotificationPanel";
 import { BaseLayoutProps, UserRole } from "./types";
 import { LayoutHeader, LayoutPageContent, MobileNavigation } from "./components";
 import { getNavItemsForRole } from "./config";
+import { useNotificationContext } from "@/contexts/NotificationContext";
 
 interface BaseLayoutContentProps extends BaseLayoutProps {
   role: UserRole;
@@ -49,9 +50,9 @@ export const BaseLayout = ({
   headerDescription,
   headerActions,
 }: BaseLayoutContentProps) => {
-  const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isSidebarExpanded, isDesktop } = useCollapsibleSidebar();
+  const { isOpen: isNotificationPanelOpen, openPanel, closePanel } = useNotificationContext();
 
   const navItems = getNavItemsForRole(role);
 
@@ -71,7 +72,7 @@ export const BaseLayout = ({
         >
           {/* Header */}
           <LayoutHeader
-            onNotificationClick={() => setIsNotificationPanelOpen(true)}
+            onNotificationClick={openPanel}
             onMobileMenuClick={() => setIsMobileMenuOpen(true)}
           />
 
@@ -88,7 +89,7 @@ export const BaseLayout = ({
         {/* Notification Panel */}
         <NotificationPanel
           isOpen={isNotificationPanelOpen}
-          onClose={() => setIsNotificationPanelOpen(false)}
+          onClose={closePanel}
         />
 
         {/* Mobile Sidebar */}

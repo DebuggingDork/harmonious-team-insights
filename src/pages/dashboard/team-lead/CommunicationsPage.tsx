@@ -44,7 +44,8 @@ import {
     useTeamPerformance,
     useCreateAnnouncement,
     useLogTeamDecision,
-    useScheduleOneOnOne
+    useScheduleOneOnOne,
+    useTeamDecisions
 } from "@/hooks/useTeamLead";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -95,6 +96,10 @@ const CommunicationsPage = () => {
     });
 
     const members = useMemo(() => teamPerformance?.members || [], [teamPerformance]);
+
+    // Fetch decisions
+    const { data: decisionsData, isLoading: decisionsLoading } = useTeamDecisions(teamCode);
+    const decisions = useMemo(() => decisionsData || [], [decisionsData]);
 
     // Mutations
     const createAnnouncement = useCreateAnnouncement();
@@ -244,18 +249,47 @@ const CommunicationsPage = () => {
                                 </div>
                             </div>
                             <div className="divide-y divide-border">
-                                {[1, 2].map(i => (
-                                    <div key={i} className="p-4 hover:bg-accent/10 transition-colors">
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <Badge variant="outline" className="mb-2">Technical</Badge>
-                                                <p className="font-semibold text-foreground">Migration to Shadcn/UI</p>
-                                                <p className="text-sm text-muted-foreground">Standardizing on Shadcn for all dashboard components to improve maintainability.</p>
-                                            </div>
-                                            <span className="text-xs text-muted-foreground">Dec 15, 2025</span>
-                                        </div>
+                                {decisionsLoading ? (
+                                    <div className="p-8 text-center">
+                                        <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
+                                        <p className="text-sm text-muted-foreground mt-2">Loading decisions...</p>
                                     </div>
-                                ))}
+                                ) : decisions.length === 0 ? (
+                                    <div className="p-8 text-center">
+                                        <Gavel className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+                                        <p className="text-sm text-muted-foreground">No decisions logged yet</p>
+                                        <p className="text-xs text-muted-foreground mt-1">Click "Log Decision" to record your first team decision</p>
+                                    </div>
+                                ) : (
+                                    decisions.map((decision: any) => (
+                                        <div key={decision.decision_code} className="p-4 hover:bg-accent/10 transition-colors">
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex-1">
+                                                    <Badge variant="outline" className="mb-2 capitalize">{decision.decision_type}</Badge>
+                                                    <p className="font-semibold text-foreground">{decision.title}</p>
+                                                    {decision.description && (
+                                                        <p className="text-sm text-muted-foreground mt-1">{decision.description}</p>
+                                                    )}
+                                                    {decision.decision_made && (
+                                                        <p className="text-sm text-foreground mt-2">
+                                                            <span className="font-medium">Decision: </span>
+                                                            {decision.decision_made}
+                                                        </p>
+                                                    )}
+                                                    {decision.rationale && (
+                                                        <p className="text-sm text-muted-foreground mt-1">
+                                                            <span className="font-medium">Rationale: </span>
+                                                            {decision.rationale}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                <span className="text-xs text-muted-foreground whitespace-nowrap ml-4">
+                                                    {decision.created_at ? format(new Date(decision.created_at), 'MMM dd, yyyy') : 'N/A'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
                             </div>
                         </div>
                     </motion.div>
