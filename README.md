@@ -1,73 +1,147 @@
-# Welcome to your Lovable project
+# TeamTune - Team Management & Collaboration Platform
 
-## Project info
+A modern, full-featured team management platform built with React, TypeScript, and Vite.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## 🚀 Features
 
-## How can I edit this code?
+- **Team Management**: Organize teams, assign roles, and manage team members
+- **Sprint Planning**: Create and manage sprints with task tracking
+- **Task Management**: Assign tasks, track progress, and monitor deadlines
+- **GitHub Integration**: Connect GitHub accounts, manage repositories, create branches and PRs
+- **Real-time Collaboration**: Seamless team collaboration with live updates
+- **Role-based Access**: Admin, Team Lead, Project Manager, and Employee roles
+- **Analytics Dashboard**: Track team performance and productivity metrics
 
-There are several ways of editing your application.
+## 🛠️ Technologies Used
 
-**Use Lovable**
+- **Frontend Framework**: React 18
+- **Build Tool**: Vite
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **UI Components**: shadcn/ui + Radix UI
+- **State Management**: TanStack Query (React Query)
+- **Routing**: React Router v6
+- **Forms**: React Hook Form + Zod
+- **Animations**: Framer Motion
+- **Charts**: Recharts
+- **Date Handling**: date-fns
+- **HTTP Client**: Axios
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## 📋 Prerequisites
 
-Changes made via Lovable will be committed automatically to this repo.
+- Node.js (v18 or higher)
+- npm or yarn
+- Git
 
-**Use your preferred IDE**
+## 🏃 Getting Started
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 1. Clone the repository
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+```bash
+git clone https://github.com/DebuggingDork/harmonious-team-insights.git
+cd harmonious-team-insights
+```
 
-Follow these steps:
+### 2. Install dependencies
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+```bash
+npm install
+```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### 3. Set up environment variables
 
-# Step 3: Install the necessary dependencies.
-npm i
+Create a `.env` file in the root directory:
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```env
+VITE_API_BASE_URL=https://upea.onrender.com
+VITE_TOKEN_STORAGE_KEY=upea_token
+```
+
+### 4. Start the development server
+
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The application will be available at `http://localhost:8080`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 📦 Available Scripts
 
-**Use GitHub Codespaces**
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run build:dev` - Build for development
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🌐 Deployment
 
-## What technologies are used for this project?
+### Deploy to Vercel
 
-This project is built with:
+1. Push your code to GitHub
+2. Import the project in Vercel
+3. Configure environment variables:
+   - `VITE_API_BASE_URL`
+   - `VITE_TOKEN_STORAGE_KEY`
+4. Deploy!
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### Build for Production
 
-## How can I deploy this project?
+```bash
+npm run build
+```
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+The production-ready files will be in the `dist` directory.
 
-## Can I connect a custom domain to my Lovable project?
+## 📁 Project Structure
 
-Yes, you can!
+```
+src/
+├── api/              # API client and endpoints
+├── components/       # Reusable UI components
+│   ├── ui/          # shadcn/ui components
+│   ├── github/      # GitHub integration components
+│   └── ...
+├── hooks/           # Custom React hooks
+├── pages/           # Page components
+├── services/        # API service functions
+├── utils/           # Utility functions
+├── App.tsx          # Main app component
+└── main.tsx         # Entry point
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## 🔐 Authentication
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+The app uses JWT-based authentication. Tokens are stored in localStorage and automatically attached to API requests.
+
+## 🐙 GitHub Integration
+
+TeamTune integrates with GitHub to provide:
+- Repository management
+- Branch creation
+- Pull request workflows
+- Code review features
+- Collaborator management
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is private and proprietary.
+
+## 👥 Team
+
+Built with ❤️ by the TeamTune development team.
+
+## 📞 Support
+
+For support, please contact the development team or open an issue in the repository.
+
+---
+
+**Version**: 1.0.0
