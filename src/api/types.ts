@@ -2070,9 +2070,16 @@ export type NotificationType =
   | 'account_unblocked'
   | 'system_announcement'
   | 'mention'
-  | 'comment';
+  | 'comment'
+  // Leave & Attendance notifications
+  | 'leave_requested'
+  | 'leave_approved'
+  | 'leave_rejected'
+  | 'leave_cancelled'
+  | 'late_arrival'
+  | 'absent_without_leave';
 
-export type NotificationCategory = 'task' | 'team' | 'project' | 'evaluation' | 'github' | 'system';
+export type NotificationCategory = 'task' | 'team' | 'project' | 'evaluation' | 'github' | 'system' | 'attendance';
 
 export interface NotificationActor {
   id: string;
@@ -2128,6 +2135,15 @@ export interface UnreadCountResponse {
     high: number;
     medium: number;
     low: number;
+  };
+  by_category: {
+    task: number;
+    team: number;
+    project: number;
+    evaluation: number;
+    github: number;
+    system: number;
+    attendance: number;
   };
 }
 

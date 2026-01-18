@@ -19,6 +19,15 @@ interface NotificationContextType {
     medium: number;
     low: number;
   };
+  unreadByCategory: {
+    task: number;
+    team: number;
+    project: number;
+    evaluation: number;
+    github: number;
+    system: number;
+    attendance: number;
+  };
   isLoadingCount: boolean;
   refetchUnreadCount: () => void;
 
@@ -126,6 +135,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
     togglePanel,
     unreadCount: unreadData?.unread_count ?? 0,
     unreadByPriority: unreadData?.by_priority ?? { urgent: 0, high: 0, medium: 0, low: 0 },
+    unreadByCategory: unreadData?.by_category ?? { task: 0, team: 0, project: 0, evaluation: 0, github: 0, system: 0, attendance: 0 },
     isLoadingCount,
     refetchUnreadCount: () => {
       if (isAuthenticated && userRole) {

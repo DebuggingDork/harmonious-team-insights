@@ -264,7 +264,7 @@ export default function AttendancePage() {
                                                         <span className="font-medium">Day Complete</span>
                                                         {todayData?.worked_hours && (
                                                             <Badge variant="outline" className="ml-2 bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
-                                                                {todayData.worked_hours.toFixed(1)}h worked
+                                                                {Number(todayData.worked_hours).toFixed(1)}h worked
                                                             </Badge>
                                                         )}
                                                     </motion.div>
@@ -561,7 +561,7 @@ export default function AttendancePage() {
                                                     {record.worked_hours && (
                                                         <div className="text-right">
                                                             <p className="text-muted-foreground text-xs">Hours</p>
-                                                            <p className="font-medium text-emerald-400">{record.worked_hours.toFixed(1)}h</p>
+                                                            <p className="font-medium text-emerald-400">{Number(record.worked_hours).toFixed(1)}h</p>
                                                         </div>
                                                     )}
                                                 </div>

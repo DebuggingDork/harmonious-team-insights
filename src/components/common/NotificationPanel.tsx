@@ -16,6 +16,12 @@ import {
   Settings,
   AlertCircle,
   Sparkles,
+  Calendar,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  Ban,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +41,7 @@ type FilterType = 'all' | 'unread' | NotificationCategory;
 
 const FILTER_OPTIONS: { value: FilterType; label: string; icon?: any }[] = [
   { value: 'all', label: 'All', icon: Sparkles },
+  { value: 'attendance', label: 'Leave', icon: Calendar },
   { value: 'github', label: 'GitHub', icon: Github },
   { value: 'team', label: 'Team', icon: Users },
 ];
@@ -103,6 +110,9 @@ const NotificationPanel = ({ isOpen, onClose }: NotificationPanelProps) => {
     if (type.startsWith('project_') || type.startsWith('sprint_')) return 'Project';
     if (type.startsWith('evaluation_')) return 'Evaluation';
     if (type.startsWith('account_') || type.startsWith('system_')) return 'System';
+    // Leave & Attendance notifications
+    if (type.startsWith('leave_')) return 'Leave';
+    if (type === 'late_arrival' || type === 'absent_without_leave') return 'Attendance';
     return 'Info';
   };
 
@@ -114,6 +124,12 @@ const NotificationPanel = ({ isOpen, onClose }: NotificationPanelProps) => {
     if (type.startsWith('project_') || type.startsWith('sprint_')) return 'bg-orange-500/10 text-orange-600 border-orange-500/20';
     if (type.startsWith('evaluation_')) return 'bg-pink-500/10 text-pink-600 border-pink-500/20';
     if (type.startsWith('account_') || type.startsWith('system_')) return 'bg-gray-500/10 text-gray-600 border-gray-500/20';
+    // Leave & Attendance notifications
+    if (type === 'leave_approved') return 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20';
+    if (type === 'leave_rejected') return 'bg-red-500/10 text-red-600 border-red-500/20';
+    if (type === 'leave_requested' || type === 'leave_cancelled') return 'bg-amber-500/10 text-amber-600 border-amber-500/20';
+    if (type === 'late_arrival') return 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20';
+    if (type === 'absent_without_leave') return 'bg-red-500/10 text-red-600 border-red-500/20';
     return 'bg-muted text-muted-foreground border-border';
   };
 
@@ -126,6 +142,13 @@ const NotificationPanel = ({ isOpen, onClose }: NotificationPanelProps) => {
     if (type.startsWith('evaluation_')) return BarChart2;
     if (type.startsWith('repository_') || type.startsWith('branch_') || type.startsWith('collaborator_')) return Github;
     if (type.startsWith('account_') || type.startsWith('system_')) return Settings;
+    // Leave & Attendance notifications
+    if (type === 'leave_requested') return Calendar;
+    if (type === 'leave_approved') return CheckCircle2;
+    if (type === 'leave_rejected') return XCircle;
+    if (type === 'leave_cancelled') return Ban;
+    if (type === 'late_arrival') return Clock;
+    if (type === 'absent_without_leave') return AlertTriangle;
     return Bell;
   };
 

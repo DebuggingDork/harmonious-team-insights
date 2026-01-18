@@ -108,6 +108,66 @@ export default function LeavePage() {
             return;
         }
 
+        // Find selected leave type requirements
+        const selectedType = leaveTypes?.find(t => t.code === formData.leave_type_code);
+        const selectedBalance = balances?.balances?.find(b => b.leave_type.code === formData.leave_type_code);
+
+        if (selectedType) {
+            const startStr = formData.start_date || '';
+            const endStr = formData.end_date || '';
+            const start = parseISO(startStr);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            // 1. Advance Notice Check
+            const daysUntilStart = differenceInDays(start, today);
+            if (daysUntilStart < selectedType.min_advance_notice_days) {
+                toast({
+                    title: 'Insufficient Advance Notice',
+                    description: `${selectedType.name} requires at least ${selectedType.min_advance_notice_days} days notice. You are requesting for ${daysUntilStart === 0 ? 'today' : `${daysUntilStart} days from now`}.`,
+                    variant: 'destructive',
+                });
+                return;
+            }
+
+            // 2. Max Consecutive Days Check
+            if (selectedType.max_consecutive_days > 0 && calculatedDays > selectedType.max_consecutive_days) {
+                toast({
+                    title: 'Duration Exceeded',
+                    description: `${selectedType.name} allows a maximum of ${selectedType.max_consecutive_days} consecutive days. You requested ${calculatedDays} days.`,
+                    variant: 'destructive',
+                });
+                return;
+            }
+
+            // 3. Balance Check
+            const remaining = selectedBalance?.remaining_days ??
+                (selectedBalance ? (selectedBalance.total_days - selectedBalance.used_days - selectedBalance.pending_days) : 0);
+
+            if (selectedBalance && calculatedDays > remaining) {
+                toast({
+                    title: 'Insufficient Balance',
+                    description: `You have ${remaining} days remaining for ${selectedType.name}, but requested ${calculatedDays} days.`,
+                    variant: 'destructive',
+                });
+                return;
+            }
+
+            // 4. Document Check (User's rule: Sick Leave only if > 3 days)
+            // Note: The backend will also enforce document requirements. This is a client-side helper.
+            const needsDocument = selectedType.requires_document &&
+                (formData.leave_type_code === 'SICK' ? calculatedDays > 3 : true);
+
+            if (needsDocument && !formData.supporting_document_url) {
+                toast({
+                    title: 'Document Required',
+                    description: `${selectedType.name} requested for ${calculatedDays} days requires a supporting document. (Required for > 3 days for Sick Leave).`,
+                    variant: 'destructive',
+                });
+                return;
+            }
+        }
+
         try {
             await submitMutation.mutateAsync(formData as SubmitLeaveRequest);
             toast({
@@ -194,12 +254,40 @@ export default function LeavePage() {
                                                             className="w-3 h-3 rounded-full"
                                                             style={{ backgroundColor: type.color_code }}
                                                         />
-                                                        {type.name}
+                                                        <span>{type.name}</span>
+                                                        <span className="text-[10px] text-muted-foreground ml-1">
+                                                            ({type.min_advance_notice_days}d notice)
+                                                        </span>
                                                     </div>
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
+                                    {formData.leave_type_code && leaveTypes?.find(t => t.code === formData.leave_type_code) && (
+                                        <div className="flex flex-wrap gap-2 mt-1">
+                                            {(() => {
+                                                const type = leaveTypes.find(t => t.code === formData.leave_type_code);
+                                                if (!type) return null;
+                                                return (
+                                                    <>
+                                                        <Badge variant="outline" className="text-[10px] bg-blue-500/5 py-0">
+                                                            Notice: {type.min_advance_notice_days} days
+                                                        </Badge>
+                                                        {type.max_consecutive_days > 0 && (
+                                                            <Badge variant="outline" className="text-[10px] bg-blue-500/5 py-0">
+                                                                Max: {type.max_consecutive_days} days
+                                                            </Badge>
+                                                        )}
+                                                        {type.requires_document && (
+                                                            <Badge variant="outline" className="text-[10px] bg-amber-500/5 text-amber-500 border-amber-500/20 py-0">
+                                                                Requires Document
+                                                            </Badge>
+                                                        )}
+                                                    </>
+                                                );
+                                            })()}
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Date Range */}
@@ -265,7 +353,6 @@ export default function LeavePage() {
                                     </div>
                                 )}
 
-                                {/* Reason */}
                                 <div className="space-y-2">
                                     <Label>Reason *</Label>
                                     <Textarea
@@ -275,6 +362,37 @@ export default function LeavePage() {
                                         className="bg-slate-800 border-slate-700 min-h-[100px]"
                                     />
                                 </div>
+
+                                {/* Supporting Document */}
+                                {(() => {
+                                    const selectedType = leaveTypes?.find(t => t.code === formData.leave_type_code);
+                                    if (!selectedType?.requires_document) return null;
+
+                                    // For Sick Leave, only show if > 3 days
+                                    if (formData.leave_type_code === 'SICK' && calculatedDays <= 3) return null;
+
+                                    return (
+                                        <motion.div
+                                            initial={{ opacity: 0, height: 0 }}
+                                            animate={{ opacity: 1, height: 'auto' }}
+                                            className="space-y-2"
+                                        >
+                                            <Label className="flex items-center gap-2">
+                                                Supporting Document URL
+                                                <span className="text-red-400">*</span>
+                                            </Label>
+                                            <Input
+                                                value={formData.supporting_document_url || ''}
+                                                onChange={(e) => setFormData((prev) => ({ ...prev, supporting_document_url: e.target.value }))}
+                                                placeholder="Upload to cloud and paste link (e.g. Google Drive, Dropbox)"
+                                                className="bg-slate-800 border-slate-700"
+                                            />
+                                            <p className="text-[10px] text-muted-foreground">
+                                                Please provide a link to your medical certificate or supporting proof.
+                                            </p>
+                                        </motion.div>
+                                    );
+                                })()}
 
                                 {/* Calculated Days */}
                                 {calculatedDays > 0 && (
@@ -337,7 +455,7 @@ export default function LeavePage() {
                                         </div>
                                         <div className="flex items-end gap-2 mb-3">
                                             <span className="text-3xl font-bold" style={{ color: balance.leave_type.color }}>
-                                                {balance.remaining_days}
+                                                {balance.remaining_days ?? (balance.total_days - balance.used_days - balance.pending_days)}
                                             </span>
                                             <span className="text-muted-foreground text-sm mb-1">/ {balance.total_days}</span>
                                         </div>
