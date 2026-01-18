@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
-import { useUnreadCount, useMarkAsRead, useMarkAllAsRead, useDeleteNotification } from '@/hooks/useNotifications';
+import { useUnreadCount, useMarkAsRead, useMarkAllAsRead, useDeleteNotification, useDeleteAllRead } from '@/hooks/useNotifications';
 import type { Notification, UserRole, NotificationPriority } from '@/api/types';
 import { toast } from '@/hooks/use-toast';
 
@@ -26,6 +26,7 @@ interface NotificationContextType {
   markAsRead: (notificationId: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
   deleteNotification: (notificationId: string) => Promise<void>;
+  deleteAllRead: () => Promise<void>;
 
   // Navigation helper
   handleNotificationClick: (notification: Notification) => void;
@@ -54,6 +55,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
   const markAsReadMutation = useMarkAsRead(userRole as UserRole);
   const markAllAsReadMutation = useMarkAllAsRead(userRole as UserRole);
   const deleteNotificationMutation = useDeleteNotification(userRole as UserRole);
+  const deleteAllReadMutation = useDeleteAllRead(userRole as UserRole);
 
   // Panel controls
   const openPanel = useCallback(() => setIsOpen(true), []);
@@ -87,6 +89,16 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
     },
     [userRole, deleteNotificationMutation]
   );
+
+  // Delete all read notifications
+  const deleteAllRead = useCallback(async () => {
+    if (!userRole) return;
+    const result = await deleteAllReadMutation.mutateAsync();
+    toast({
+      title: 'Read notifications deleted',
+      description: `${result.deleted_count} notification${result.deleted_count !== 1 ? 's' : ''} deleted.`,
+    });
+  }, [userRole, deleteAllReadMutation]);
 
   // Handle notification click - mark as read and navigate
   const handleNotificationClick = useCallback(
@@ -123,6 +135,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
     markAsRead,
     markAllAsRead,
     deleteNotification,
+    deleteAllRead,
     handleNotificationClick,
     userRole,
   };

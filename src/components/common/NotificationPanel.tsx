@@ -49,6 +49,7 @@ const NotificationPanel = ({ isOpen, onClose }: NotificationPanelProps) => {
     markAsRead,
     markAllAsRead,
     deleteNotification,
+    deleteAllRead,
     handleNotificationClick,
     userRole,
   } = useNotificationContext();
@@ -408,7 +409,19 @@ const NotificationPanel = ({ isOpen, onClose }: NotificationPanelProps) => {
                       title="Mark all as read"
                     >
                       <CheckCheck className="h-4 w-4 mr-1.5" />
-                      Clear all
+                      Mark read
+                    </Button>
+                  )}
+                  {notifications.some(n => n.is_read) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={deleteAllRead}
+                      className="text-xs h-9 px-3 hover:bg-destructive/10 hover:text-destructive transition-all duration-200 rounded-lg"
+                      title="Delete all read notifications"
+                    >
+                      <Trash2 className="h-4 w-4 mr-1.5" />
+                      Clear read
                     </Button>
                   )}
                   <Button
